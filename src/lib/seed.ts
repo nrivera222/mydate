@@ -289,4 +289,34 @@ export function seed(conn: DatabaseSync) {
   conn.prepare("INSERT INTO crm_notes (user_id, author_id, kind, body, created_at) VALUES (?, 1, 'llamada', ?, ?)").run(demoId, "Llamada de bienvenida Platinum. Interesada en Salas de Dubái y viajes a Mónaco.", daysAgo(80));
   conn.prepare("INSERT INTO crm_notes (user_id, author_id, kind, body, created_at) VALUES (?, 1, 'concierge', ?, ?)").run(demoId, "Reservó flores para un match. Candidata a upgrade a Diamond.", daysAgo(12));
   conn.prepare("INSERT INTO concierge_requests (user_id, body, created_at) VALUES (?, ?, ?)").run(ids[5], "Necesito una mesa para dos en Mónaco durante el Grand Prix.", daysAgo(1));
+
+  // Eventos privados (próximos y pasados) con entradas vendidas
+  const evIns = conn.prepare("INSERT INTO events (title, city, venue, starts_at, description, capacity, price, min_tier, partner_id, emoji) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+  const EVENTS: [string, string, string, number, string, number, number, string, number | null, string][] = [
+    ["Sunset Singles en yate", "Dubái", "Dubai Marina · Azure Marina Yachts", -6, "Crucero al atardecer para 30 miembros verificados: champagne, DJ y juegos para romper el hielo.", 30, 750_00, "gold", 3, "🛥️"],
+    ["Cena a ciegas bajo las estrellas", "Dubái", "TWO LOVE Desert Majlis", -12, "Mesas de 8 organizadas por nuestro algoritmo de compatibilidad. Menú emiratí de autor y halconería.", 24, 1_200_00, "platinum", 4, "🏜️"],
+    ["Art Night: coleccionistas", "Abu Dabi", "Saadiyat Cultural District", -20, "Visita privada guiada y cóctel con galeristas. Ideal para amantes del arte contemporáneo.", 40, 450_00, "essential", null, "🎨"],
+    ["Grand Prix Paddock Soirée", "Mónaco", "TWO LOVE Riviera Terrace", -45, "Fiesta privada con vistas al circuito durante el fin de semana del Grand Prix.", 60, 4_500_00, "diamond", 11, "🏎️"],
+    ["Royal Black Gala", "Riad", "TWO LOVE Royal Palace Wing", -60, "Gala anual solo por invitación con matchmakers presentes y subasta benéfica.", 80, 0, "royal", null, "👑"],
+    ["Brunch de bienvenida", "Dubái", "TWO LOVE Café Privé · DIFC", 14, "Encuentro mensual para nuevos miembros verificados.", 25, 250_00, "essential", null, "🥂"],
+  ];
+  const tkIns = conn.prepare("INSERT OR IGNORE INTO event_tickets (event_id, user_id, price, vat, created_at) VALUES (?, ?, ?, ?, ?)");
+  EVENTS.forEach((e) => {
+    const eid = Number(evIns.run(e[0], e[1], e[2], daysAgo(e[3], 19).slice(0, 14) + "30:00", e[4], e[5], e[6], e[7], e[8], e[9]).lastInsertRowid);
+    const buyers = pickN(ids.slice(1), Math.min(e[5] - 3, 6 + Math.floor(r() * 10)));
+    for (const b of buyers) {
+      const at = daysAgo(Math.max(1, e[3] < 0 ? 3 : e[3] + 3));
+      const vat = Math.round(e[6] * VAT_RATE);
+      const res = tkIns.run(eid, b, e[6], vat, at);
+      if (res.changes && e[6]) recordRevenue(conn, "evento", e[6], vat, b, `ticket:${res.lastInsertRowid}`, at);
+    }
+  });
+
+  // Invitados por el usuario demo y notificaciones iniciales
+  conn.prepare("UPDATE users SET referred_by = ?, source = 'referido' WHERE id IN (?, ?, ?)").run(demoId, ids[4], ids[9], ids[15]);
+  const nIns = conn.prepare("INSERT INTO notifications (user_id, kind, title, body, href, created_at) VALUES (?, ?, ?, ?, ?, ?)");
+  if (men[0]) nIns.run(demoId, "mensaje", "Nuevo mensaje", "¿Te apetece un café en el Café Privé de DIFC?", `/mensajes/${men[0].user_id}`, daysAgo(2, 20));
+  nIns.run(demoId, "match", "Alguien te ha dado un Super Like ★", "Descubre quién desde Descubrir.", "/descubrir", daysAgo(4));
+  nIns.run(demoId, "evento", "Nuevo evento: Sunset Singles en yate", "Quedan pocas plazas.", "/eventos", daysAgo(1));
+  nIns.run(pendingId, "sistema", "Bienvenido/a a TWO LOVE", "Completa tus 5 verificaciones para empezar a conectar.", "/verificacion", daysAgo(1));
 }

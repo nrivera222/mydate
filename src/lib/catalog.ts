@@ -201,5 +201,9 @@ export const REPORT_REASONS = ["Perfil falso", "Comportamiento inapropiado", "So
 // Líneas de ingreso (ERP)
 export const STREAM_LABEL: Record<string, string> = {
   suscripcion: "Suscripciones", regalo: "Regalos (margen)", comision_reserva: "Comisión acompañamiento", tarifa_servicio: "Tarifa de servicio",
-  sala: "Salas TWO LOVE", seguro: "Comisión seguros", aliado: "Alianzas y patrocinio",
+  sala: "Salas TWO LOVE", seguro: "Comisión seguros", aliado: "Alianzas y patrocinio", evento: "Eventos privados",
 };
+
+// Programa de referidos (fils)
+export const REFERRAL_WELCOME = 50_00; // bono extra para quien llega invitado
+export const REFERRAL_REWARD = 150_00; // para quien invita, cuando el invitado contrata su primera membresía

@@ -3,6 +3,7 @@ import Link from "next/link";
 import "./globals.css";
 import { currentUser } from "@/lib/auth";
 import { walletBalance } from "@/lib/users";
+import { one } from "@/lib/db";
 import { money } from "@/lib/money";
 import { TierBadge } from "@/components/ui";
 import { logout } from "./actions/auth";
@@ -16,6 +17,7 @@ const MEMBER_NAV = [
   ["/descubrir", "Descubrir"],
   ["/acompanantes", "Acompañamiento"],
   ["/salas", "Salas TWO LOVE"],
+  ["/eventos", "Eventos"],
   ["/regalos", "Regalos"],
   ["/mensajes", "Mensajes"],
   ["/reservas", "Reservas"],
@@ -30,6 +32,7 @@ const ADMIN_NAV = [
   ["/admin/verificaciones", "Verificaciones"],
   ["/admin/crm", "CRM"],
   ["/admin/erp", "ERP"],
+  ["/admin/eventos", "Eventos"],
   ["/admin/seguridad", "Seguridad"],
 ];
 
@@ -37,6 +40,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const user = await currentUser();
   const nav = user?.role === "admin" ? ADMIN_NAV : MEMBER_NAV;
   const wallet = user && user.role !== "admin" ? walletBalance(user.id) : null;
+  const unread = user ? one<{ n: number }>("SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND read_at IS NULL", user.id)!.n : 0;
 
   return (
     <html lang="es">
@@ -58,6 +62,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     ◈ {money(wallet.balance)}
                   </Link>
                 )}
+                <Link href="/notificaciones" className="relative text-lg text-muted hover:text-gold-2" aria-label={`Notificaciones (${unread} sin leer)`}>
+                  🔔
+                  {unread > 0 && (
+                    <span className="absolute -right-2 -top-1 min-w-4 rounded-full bg-rose px-1 text-center text-[10px] font-semibold leading-4 text-ink">{unread > 9 ? "9+" : unread}</span>
+                  )}
+                </Link>
                 <TierBadge tier={user.tier} />
                 {user.role !== "admin" && (
                   <Link href="/perfil/editar" className="text-muted hover:text-gold-2">{user.name.split(" ")[0]}</Link>

@@ -273,7 +273,69 @@ CREATE TABLE IF NOT EXISTS concierge_requests (
   status TEXT NOT NULL DEFAULT 'nuevo',          -- nuevo | en_curso | resuelto
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL,                            -- match | mensaje | reserva | regalo | verificacion | evento | referido | sistema
+  title TEXT NOT NULL,
+  body TEXT NOT NULL DEFAULT '',
+  href TEXT NOT NULL DEFAULT '',
+  read_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_notif_user ON notifications(user_id, read_at);
+
+-- Eventos privados TWO LOVE (networking y citas en grupo)
+CREATE TABLE IF NOT EXISTS events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  city TEXT NOT NULL,
+  venue TEXT NOT NULL,
+  starts_at TEXT NOT NULL,
+  description TEXT NOT NULL,
+  capacity INTEGER NOT NULL,
+  price INTEGER NOT NULL,                        -- fils, sin IVA
+  min_tier TEXT NOT NULL DEFAULT 'essential',
+  partner_id INTEGER REFERENCES partners(id),
+  emoji TEXT NOT NULL DEFAULT '✨',
+  status TEXT NOT NULL DEFAULT 'publicado'       -- publicado | cancelado
+);
+
+CREATE TABLE IF NOT EXISTS event_tickets (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id INTEGER NOT NULL REFERENCES events(id),
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  price INTEGER NOT NULL,
+  vat INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'confirmada',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (event_id, user_id)
+);
+
+-- Pagos con pasarela externa (idempotencia de webhooks)
+CREATE TABLE IF NOT EXISTS payments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  provider TEXT NOT NULL,
+  external_id TEXT NOT NULL UNIQUE,
+  amount INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pendiente',      -- pendiente | pagado | fallido
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `;
+
+/** Migraciones aditivas para bases de datos creadas con versiones anteriores. */
+function migrate(conn: DatabaseSync) {
+  const cols = (table: string) => (conn.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).map((c) => c.name);
+  const users = cols("users");
+  if (!users.includes("referral_code")) {
+    conn.exec("ALTER TABLE users ADD COLUMN referral_code TEXT");
+    conn.exec("UPDATE users SET referral_code = 'TL' || upper(hex(randomblob(3))) WHERE referral_code IS NULL");
+  }
+  if (!users.includes("referred_by")) conn.exec("ALTER TABLE users ADD COLUMN referred_by INTEGER REFERENCES users(id)");
+  conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_ref ON users(referral_code)");
+}
 
 type Globals = { __twolove_db?: DatabaseSync };
 const g = globalThis as Globals;
@@ -284,10 +346,12 @@ export function db(): DatabaseSync {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const conn = new DatabaseSync(file);
   conn.exec(SCHEMA);
+  migrate(conn);
   const count = conn.prepare("SELECT COUNT(*) AS n FROM users").get() as { n: number };
   if (count.n === 0) {
     tx(conn, () => seed(conn));
   }
+  conn.exec("UPDATE users SET referral_code = 'TL' || upper(hex(randomblob(3))) WHERE referral_code IS NULL");
   g.__twolove_db = conn;
   return conn;
 }

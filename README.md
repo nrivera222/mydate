@@ -48,6 +48,9 @@ npm run db:reset        # borra la base; se regenera con datos demo
 | Membresías | `/membresias` | Essential (gratis) · Gold · Platinum · Diamond · **Royal Black** (por invitación). Mensual o anual. |
 | Aliados | `/aliados` | Beneficios de marcas (joyería, yates, aviación privada, hoteles, moda, clínicas…) desbloqueados por nivel. |
 | Concierge | `/concierge` | 24/7 para Diamond y Royal Black (matchmaker humano en Royal). |
+| Eventos privados | `/eventos` | Yates, cenas a ciegas por compatibilidad, galas. Entradas pagadas desde la billetera con descuento por nivel, aforo, código de entrada y “Quién va” (solo visible con entrada). |
+| Notificaciones | `/notificaciones` | Matches, Super Likes, mensajes, reservas, pagos liberados, regalos, verificaciones, eventos y referidos. Contador en la cabecera. |
+| Invita y gana | `/billetera#invitar` | Código personal: el invitado recibe 50 AED extra y quien invita 150 AED cuando el invitado contrata su primera membresía. |
 | Valoraciones y seguridad | `/reservas`, `/perfil/[id]` | Estrellas + etiquetas tras cada encuentro; denunciar y bloquear. |
 
 ### Back-office (`/admin`, solo rol admin)
@@ -55,6 +58,7 @@ npm run db:reset        # borra la base; se regenera con datos demo
 - **Verificaciones**: cola de revisión con acceso a documentos privados, aprobar/rechazar con motivo.
 - **CRM**: embudo (Lead → Verificado → Suscriptor → VIP / En riesgo), LTV neto por miembro, canales de adquisición, filtros, ficha 360° (timeline de notas/llamadas, verificaciones, billetera, reservas, crédito de cortesía, suspensión) y cola de concierge.
 - **ERP**: cuenta de resultados por línea de ingreso con IVA (5%, EAU), cuentas por pagar (aliados y acompañantes), custodia y pasivo de billeteras, pedidos de regalos físicos con estados de logística, inventario con reposición, alianzas (comisión, facturación de patrocinios, alta de aliados), rendimiento de Salas y MRR por plan.
+- **Eventos**: programación, aforo, ventas e ingresos por evento; cancelación con reembolso automático y aviso a los asistentes.
 - **Seguridad**: disputas con fondos congelados (reembolsar o pagar), encuentros próximos con check-in y denuncias.
 
 ## Estructura
@@ -80,9 +84,9 @@ docs/                  modelo de negocio y arquitectura
 
 Esto es un MVP funcional de extremo a extremo. Antes de lanzar en producción:
 
-- Integrar pasarela de pago real (Checkout.com / Network International / Stripe) — hoy las recargas se aprueban al instante en modo demo.
+- Configurar Stripe (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, webhook en `/api/pagos/stripe` con los eventos `checkout.session.completed` y `checkout.session.expired`). Sin claves, las recargas se aprueban al instante en modo demo.
 - Proveedor KYC automático (p. ej. UAE Pass, Onfido, Sumsub) y detección de vivacidad para la selfie.
-- Cifrado en reposo de documentos sensibles (hoy se guardan en `data/uploads/private`, fuera de la web pública y solo accesibles a admin) y almacenamiento en S3/Blob con KMS.
+- Los documentos sensibles ya se cifran en reposo con AES-256-GCM (`UPLOAD_ENCRYPTION_KEY`); en producción moverlos a S3/Blob con la clave en un KMS.
 - Migrar de SQLite a PostgreSQL para escalar (el esquema es SQL estándar).
 - Internacionalización (árabe con RTL, inglés, ruso, francés) y app móvil.
 - Revisión legal local (ver `docs/MODELO_NEGOCIO.md`, sección de cumplimiento).

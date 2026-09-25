@@ -4,13 +4,16 @@ import { Flash, sp, type SP } from "@/components/ui";
 
 export default async function RegisterPage({ searchParams }: { searchParams: SP }) {
   const q = await searchParams;
+  const ref = (sp(q.ref) ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
   return (
     <div className="mx-auto max-w-md">
       <h1 className="h1 text-center">Solicitar acceso</h1>
       <p className="mt-2 text-center text-muted">Crea tu cuenta y completa las 5 verificaciones para activar tu perfil.</p>
       <div className="card mt-8">
         <Flash ok={sp(q.ok)} error={sp(q.error)} />
+        {ref && <div className="mb-4 rounded-xl border border-gold/40 p-3 text-sm text-gold-2">Te ha invitado un miembro de TWO LOVE ({ref}). Recibirás un bono extra de bienvenida.</div>}
         <form action={register} className="space-y-4">
+          <input type="hidden" name="ref" value={ref} />
           <div>
             <label className="label" htmlFor="name">Nombre completo</label>
             <input className="input" id="name" name="name" required autoComplete="name" />

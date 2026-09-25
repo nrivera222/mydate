@@ -5,10 +5,13 @@ import type { DatabaseSync } from "node:sqlite";
 import { requireUser } from "@/lib/auth";
 import { one, transaction } from "@/lib/db";
 import { flash, int, list, str } from "@/lib/flash";
-import { PROVIDER_COMMISSION, RATE_UNITS, RATING_TAGS, TIERS, VAT_RATE, tierById } from "@/lib/catalog";
+import { PROVIDER_COMMISSION, RATE_UNITS, RATING_TAGS, REFERRAL_REWARD, TIERS, VAT_RATE, tierById } from "@/lib/catalog";
 import { hold, LedgerError, post, quoteCompanion, recordPayable, recordRevenue, releaseHold } from "@/lib/ledger";
 import { isBlockedBetween, isFullyVerified } from "@/lib/users";
 import { money, toFils } from "@/lib/money";
+import { notify } from "@/lib/notify";
+import { createCheckout, paymentsEnabled } from "@/lib/payments";
+import { redirect } from "next/navigation";
 
 /** Ejecuta una operación contable y traduce errores de negocio a mensajes. */
 function attempt(fn: (conn: DatabaseSync) => void): string | null {
@@ -30,7 +33,18 @@ export async function topUp(fd: FormData) {
   const amount = toFils(Number(fd.get("amount")));
   const method = str(fd, "method") || "tarjeta";
   if (!(amount >= 50_00 && amount <= 500_000_00)) flash("/billetera", "El importe debe estar entre 50 y 500.000 AED.", "error");
-  // Pasarela en modo demostración: en producción aquí se confirma el cobro (Stripe, Checkout.com, Network International…)
+  if (paymentsEnabled() && method !== "demo") {
+    // Pasarela real: el saldo se abona cuando el webhook confirma el pago
+    let url = "";
+    try {
+      url = await createCheckout(user.id, user.email, amount);
+    } catch (e) {
+      console.error(e);
+    }
+    if (!url) flash("/billetera", "La pasarela de pago no está disponible. Inténtalo más tarde.", "error");
+    redirect(url);
+  }
+  // Modo demostración: la recarga se aprueba al instante
   transaction((conn) => post(conn, user.id, "recarga", amount, `Recarga vía ${method}`, `topup:${method}`));
   revalidatePath("/billetera");
   flash("/billetera", `Recarga de ${money(amount)} completada.`);
@@ -64,6 +78,12 @@ export async function subscribe(fd: FormData) {
 
   const err = attempt((conn) => {
     const ref = `sub:${tier.id}:${period}`;
+    const firstPaid = !conn.prepare("SELECT 1 FROM subscriptions WHERE user_id = ?").get(user.id);
+    const referrer = conn.prepare("SELECT referred_by FROM users WHERE id = ?").get(user.id) as { referred_by: number | null };
+    if (firstPaid && referrer.referred_by) {
+      post(conn, referrer.referred_by, "bono", REFERRAL_REWARD, `Recompensa por invitar a ${user.name.split(" ")[0]}`, `referral:${user.id}`);
+      notify(conn, referrer.referred_by, "referido", `¡Has ganado ${money(REFERRAL_REWARD)}!`, `${user.name.split(" ")[0]} se ha unido a ${tier.name} con tu invitación.`, "/billetera");
+    }
     post(conn, user.id, "suscripcion", -price, `Membresía ${tier.name} ${period === "yearly" ? "anual" : "mensual"}`, ref);
     const vat = Math.round(price - price / (1 + VAT_RATE)); // precios con IVA incluido
     recordRevenue(conn, "suscripcion", price - vat, vat, user.id, ref);
@@ -111,6 +131,7 @@ export async function sendGift(fd: FormData) {
     if (recipientCredit) post(conn, to, "regalo_recibido", recipientCredit, `Has recibido: ${gift.name}`, ref);
     recordRevenue(conn, "regalo", net - gift.cost - recipientCredit, vat, user.id, ref);
     if (gift.partner_id && gift.cost) recordPayable(conn, "partner", { partnerId: gift.partner_id }, gift.cost, ref);
+    notify(conn, to, "regalo", `${user.name.split(" ")[0]} te ha enviado: ${gift.name}`, recipientCredit ? `+${money(recipientCredit)} en tu billetera` : "Nuestro aliado te lo entregará en mano.", "/regalos");
   });
   if (err) flash(back, err, "error");
   revalidatePath("/regalos");
@@ -149,6 +170,7 @@ export async function bookCompanion(fd: FormData) {
       .run(user.id, providerId, unit.id, qty, start.replace("T", " ") + ":00", activity, str(fd, "notes", 500), q.subtotal, q.serviceFee, q.vat, q.total, q.commission, q.payout);
     bookingId = Number(r.lastInsertRowid);
     hold(conn, user.id, q.total, `Custodia reserva #${bookingId}`, `booking:${bookingId}`);
+    notify(conn, providerId, "reserva", `Nueva solicitud de ${user.name.split(" ")[0]}`, `${activity} · ${qty} ${qty === 1 ? unit.label.toLowerCase() : unit.plural} · ganarías ${money(q.payout)}`, "/reservas");
   });
   if (err) flash(back, `${err} Recarga tu billetera.`, "error");
   revalidatePath("/reservas");
@@ -181,6 +203,7 @@ export async function respondBooking(fd: FormData) {
       refundClient(conn, b, b.total, "Reembolso íntegro");
       conn.prepare("UPDATE bookings SET status = 'declined', updated_at = datetime('now') WHERE id = ?").run(b.id);
     }
+    notify(conn, b.client_id, "reserva", accept ? `Reserva #${b.id} confirmada` : `Reserva #${b.id} rechazada`, accept ? `${user.name.split(" ")[0]} ha aceptado tu solicitud.` : "Te hemos devuelto el importe íntegro.", "/reservas");
   });
   if (err) flash("/reservas", err, "error");
   revalidatePath("/reservas");
@@ -197,6 +220,7 @@ export async function cancelBooking(fd: FormData) {
     refundClient(conn, b, keepFee ? b.total - b.service_fee - b.vat : b.total, keepFee ? "Reembolso (menos tarifa de servicio)" : "Reembolso íntegro");
     if (keepFee && b.service_fee) recordRevenue(conn, "tarifa_servicio", b.service_fee, b.vat, b.client_id, `booking:${b.id}`);
     conn.prepare("UPDATE bookings SET status = 'cancelled', updated_at = datetime('now') WHERE id = ?").run(b.id);
+    notify(conn, b.provider_id, "reserva", `Reserva #${b.id} cancelada`, "El cliente ha cancelado la reserva.", "/reservas");
   });
   if (err) flash("/reservas", err, "error");
   revalidatePath("/reservas");
@@ -213,6 +237,7 @@ export async function completeBooking(fd: FormData) {
     recordRevenue(conn, "tarifa_servicio", b.service_fee, b.vat, b.client_id, `booking:${b.id}`);
     recordRevenue(conn, "comision_reserva", b.provider_commission, 0, b.provider_id, `booking:${b.id}`);
     conn.prepare("UPDATE bookings SET status = 'completed', updated_at = datetime('now') WHERE id = ?").run(b.id);
+    notify(conn, b.provider_id, "reserva", `Pago liberado: ${money(b.provider_payout)}`, `Reserva #${b.id} finalizada. Ya está en tu billetera.`, "/billetera");
   });
   if (err) flash("/reservas", err, "error");
   revalidatePath("/reservas");
@@ -227,6 +252,7 @@ export async function disputeBooking(fd: FormData) {
     conn.prepare("UPDATE bookings SET status = 'disputed', updated_at = datetime('now') WHERE id = ?").run(b.id);
     conn.prepare("INSERT INTO reports (reporter_id, reported_id, reason, details) VALUES (?, ?, 'Disputa de reserva', ?)")
       .run(user.id, b.client_id === user.id ? b.provider_id : b.client_id, `Reserva #${b.id}: ${str(fd, "details", 500)}`);
+    notify(conn, b.client_id === user.id ? b.provider_id : b.client_id, "reserva", `Disputa abierta en la reserva #${b.id}`, "Nuestro equipo mediará y te contactará.", "/reservas");
   });
   revalidatePath("/reservas");
   flash("/reservas", "Disputa abierta. Los fondos quedan congelados hasta la resolución.");
@@ -273,6 +299,7 @@ export async function bookLounge(fd: FormData) {
     const ref = `booking:${r.lastInsertRowid}`;
     post(conn, user.id, "sala", -(subtotal + vat), `${lounge.name} · ${hours} h`, ref);
     recordRevenue(conn, "sala", subtotal, vat, user.id, ref);
+    notify(conn, guest, "reserva", `${user.name.split(" ")[0]} te invita a ${lounge.name}`, `${startDb.slice(0, 16)} · ${hours} h`, "/reservas");
   });
   if (err) flash(back, err, "error");
   revalidatePath("/reservas");
@@ -292,6 +319,7 @@ export async function rate(fd: FormData) {
     const r = conn.prepare("INSERT OR IGNORE INTO ratings (booking_id, rater_id, ratee_id, stars, tags, comment) VALUES (?, ?, ?, ?, ?, ?)")
       .run(b.id, user.id, ratee, stars, list(fd, "tags", RATING_TAGS).join(","), str(fd, "comment", 500));
     if (!r.changes) throw new BusinessError("Ya valoraste esta reserva.");
+    notify(conn, ratee, "reserva", `Has recibido una valoración de ${stars}★`, "Tu reputación mejora tu visibilidad.", `/perfil/${ratee}`);
   });
   if (err) flash("/reservas", err, "error");
   revalidatePath("/reservas");
@@ -307,3 +335,33 @@ export async function requestConcierge(fd: FormData) {
   flash("/concierge", "Solicitud recibida. Tu concierge te contactará en menos de 15 minutos.");
 }
 
+
+// ── Eventos privados ─────────────────────────────────────────────────────────
+
+export async function buyTicket(fd: FormData) {
+  const user = await requireUser();
+  const eventId = int(fd, "event");
+  const back = `/eventos/${eventId}`;
+  const ev = one<{ id: number; title: string; price: number; capacity: number; min_tier: string; starts_at: string; status: string; partner_id: number | null }>(
+    "SELECT * FROM events WHERE id = ?", eventId,
+  );
+  if (!ev || ev.status !== "publicado" || new Date(ev.starts_at.replace(" ", "T") + "Z").getTime() < Date.now()) flash("/eventos", "Evento no disponible.", "error");
+  if (tierById(user.tier).rank < tierById(ev.min_tier).rank) flash("/membresias", `Este evento es para miembros ${tierById(ev.min_tier).name} o superior.`, "error");
+  if (!isFullyVerified(user.id)) flash("/verificacion", "Completa tu verificación para asistir a eventos.", "error");
+  const discount = Math.round(ev.price * tierById(user.tier).giftDiscount);
+  const net = ev.price - discount;
+  const vat = Math.round(net * VAT_RATE);
+  const err = attempt((conn) => {
+    const sold = (conn.prepare("SELECT COUNT(*) AS n FROM event_tickets WHERE event_id = ? AND status = 'confirmada'").get(ev.id) as { n: number }).n;
+    if (sold >= ev.capacity) throw new BusinessError("Entradas agotadas.");
+    if (conn.prepare("SELECT 1 FROM event_tickets WHERE event_id = ? AND user_id = ?").get(ev.id, user.id)) throw new BusinessError("Ya tienes entrada para este evento.");
+    const r = conn.prepare("INSERT INTO event_tickets (event_id, user_id, price, vat) VALUES (?, ?, ?, ?)").run(ev.id, user.id, net, vat);
+    const ref = `ticket:${r.lastInsertRowid}`;
+    if (net + vat > 0) post(conn, user.id, "evento", -(net + vat), `Entrada: ${ev.title}`, ref);
+    recordRevenue(conn, "evento", net, vat, user.id, ref);
+    notify(conn, user.id, "evento", `Entrada confirmada: ${ev.title}`, `${ev.starts_at.slice(0, 16)} · muestra tu código TWO LOVE en la puerta.`, back);
+  });
+  if (err) flash(back, err, "error");
+  revalidatePath(back);
+  flash(back, `¡Nos vemos en ${ev.title}!`);
+}

@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { one, run } from "@/lib/db";
+import { db, one, run } from "@/lib/db";
+import { notify } from "@/lib/notify";
 import { flash, int, str } from "@/lib/flash";
 import { REPORT_REASONS, tierById } from "@/lib/catalog";
 import { isBlockedBetween, isFullyVerified, isMatch } from "@/lib/users";
@@ -30,8 +31,10 @@ export async function react(fd: FormData) {
   }
 
   run("INSERT INTO likes (from_id, to_id, kind) VALUES (?, ?, ?) ON CONFLICT(from_id, to_id) DO UPDATE SET kind = excluded.kind, created_at = datetime('now')", user.id, target, kind);
+  if (kind === "super") notify(db(), target, "match", "Alguien te ha dado un Super Like ★", "Descubre quién desde Descubrir.", "/descubrir");
   revalidatePath("/descubrir");
   if (kind !== "pass" && isMatch(user.id, target)) {
+    notify(db(), target, "match", `¡Nuevo match con ${user.name.split(" ")[0]}!`, "Rompe el hielo con un mensaje o un regalo.", `/mensajes/${user.id}`);
     flash(`/mensajes/${target}`, "¡Es un match! Rompe el hielo con un mensaje o un regalo.");
   }
   redirect(back);
@@ -49,6 +52,10 @@ export async function sendMessage(fd: FormData) {
   // Filtro de seguridad: evitar compartir datos de contacto o pagos fuera de la plataforma
   const risky = /(\+?\d[\d\s-]{8,}\d)|(whats ?app|telegram|iban|western union|transferencia)/i.test(body);
   run("INSERT INTO messages (from_id, to_id, body) VALUES (?, ?, ?)", user.id, to, body);
+  // Una sola notificación pendiente por conversación para no saturar
+  if (!one("SELECT 1 FROM notifications WHERE user_id = ? AND kind = 'mensaje' AND href = ? AND read_at IS NULL", to, `/mensajes/${user.id}`)) {
+    notify(db(), to, "mensaje", `Nuevo mensaje de ${user.name.split(" ")[0]}`, body.slice(0, 80), `/mensajes/${user.id}`);
+  }
   revalidatePath(back);
   if (risky) flash(back, "Recuerda: por tu seguridad, mantén pagos y contacto dentro de TWO LOVE.", "error");
   redirect(back);
