@@ -1,0 +1,48 @@
+import { requireUser } from "@/lib/auth";
+import { all } from "@/lib/db";
+import { tierById } from "@/lib/catalog";
+import { pct } from "@/lib/money";
+import { PageHeader, TierBadge } from "@/components/ui";
+
+const CAT_LABEL: Record<string, string> = {
+  joyeria: "Joyería", flores: "Flores", yates: "Yates", hotel: "Hoteles y resorts", aviacion: "Aviación privada", moda: "Moda",
+  automocion: "Automoción", clinica: "Clínica (verificación médica)", psicologia: "Psicología (verificación)", seguros: "Seguros de vida",
+  restaurante: "Restaurantes", relojeria: "Relojería",
+};
+
+export default async function Partners() {
+  const user = await requireUser();
+  const rank = tierById(user.tier).rank;
+  const partners = all<{ id: number; name: string; category: string; city: string; benefit: string; discount: number; min_tier: string }>(
+    "SELECT * FROM partners WHERE status = 'activo' ORDER BY category, name",
+  );
+  return (
+    <div>
+      <PageHeader title="Aliados y beneficios" subtitle="Marcas de lujo que cuidan cada detalle de tus citas. Muestra tu tarjeta digital TWO LOVE para activar el beneficio." />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {partners.map((p) => {
+          const unlocked = rank >= tierById(p.min_tier).rank;
+          return (
+            <div key={p.id} className={`card flex flex-col gap-3 ${unlocked ? "" : "opacity-60"}`}>
+              <div className="flex items-center justify-between">
+                <span className="chip">{CAT_LABEL[p.category] ?? p.category}</span>
+                <TierBadge tier={p.min_tier} />
+              </div>
+              <div className="font-display text-xl">{p.name}</div>
+              <div className="text-sm text-muted">{p.city}</div>
+              <p className="text-sm">{p.benefit}</p>
+              <div className="mt-auto flex items-center justify-between">
+                {p.discount > 0 && <span className="font-display text-2xl text-gold-2">-{pct(p.discount)}</span>}
+                {unlocked ? (
+                  <span className="chip-gold">Código: TL-{p.id.toString().padStart(3, "0")}-{user.id}</span>
+                ) : (
+                  <span className="chip">🔒 {tierById(p.min_tier).name}</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
