@@ -8,3 +8,7 @@ data/uploads
 !.env.example
 next-env.d.ts
 *.tsbuildinfo
+
+# Vídeos y paquetes de marca pesados (se generan con scripts/render-video.mjs)
+public/brand/*.mp4
+public/brand/*.zip
