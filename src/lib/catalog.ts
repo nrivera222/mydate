@@ -5,7 +5,7 @@ export const CURRENCY = "AED";
 export const VAT_RATE = 0.05; // IVA de EAU
 export const PROVIDER_COMMISSION = 0.15; // comisión al acompañante sobre su tarifa
 
-export const FX: Record<string, number> = { AED: 1, USD: 0.2723, EUR: 0.2515, GBP: 0.2143, SAR: 1.0211 };
+export const FX: Record<string, number> = { AED: 1, USD: 0.2723, EUR: 0.2515, GBP: 0.2143, SAR: 1.0211, CLP: 255 }; // CLP: igual que CLP_PER_AED (park-catalog.ts)
 
 export type TierId = "essential" | "gold" | "platinum" | "diamond" | "royal";
 
@@ -41,21 +41,21 @@ export const TIERS: Tier[] = [
     tagline: "Más visibilidad y filtros avanzados.",
     dailyLikes: 50, superLikes: 3, serviceFee: 0.08, giftDiscount: 0.05, monthlyCredit: 50_00,
     seeLikes: true, incognito: false, concierge: false, matchmaker: false,
-    benefits: ["50 likes y 3 Super Likes diarios", "Ver quién te dio like", "Filtros por prototipo y patrimonio", "5% en regalos", "50 AED de crédito mensual"],
+    benefits: ["50 likes y 3 Super Likes diarios", "Ver quién te dio like", "Filtros por prototipo y patrimonio", "5% en regalos", "50 AED de crédito mensual", "5% en TWO LOVE Park"],
   },
   {
     id: "platinum", name: "Platinum", rank: 2, monthly: 999_00, yearly: 9_990_00,
     tagline: "Salas TWO LOVE y prioridad en el descubrimiento.",
     dailyLikes: 200, superLikes: 10, serviceFee: 0.06, giftDiscount: 0.1, monthlyCredit: 200_00,
     seeLikes: true, incognito: true, concierge: false, matchmaker: false,
-    benefits: ["Likes prácticamente ilimitados", "Modo incógnito", "Acceso a Salas TWO LOVE Platinum", "10% en regalos y aliados", "200 AED de crédito mensual"],
+    benefits: ["Likes prácticamente ilimitados", "Modo incógnito", "Acceso a Salas TWO LOVE Platinum", "10% en regalos y aliados", "200 AED de crédito mensual", "10% en TWO LOVE Park"],
   },
   {
     id: "diamond", name: "Diamond", rank: 3, monthly: 2_999_00, yearly: 29_990_00,
     tagline: "Concierge 24/7 y experiencias de lujo.",
     dailyLikes: -1, superLikes: 30, serviceFee: 0.04, giftDiscount: 0.15, monthlyCredit: 750_00,
     seeLikes: true, incognito: true, concierge: true, matchmaker: false,
-    benefits: ["Todo Platinum", "Concierge 24/7 para reservas y regalos", "Salas Diamond (yates, desierto, suites)", "15% en regalos y aliados", "750 AED de crédito mensual"],
+    benefits: ["Todo Platinum", "Concierge 24/7 para reservas y regalos", "Salas Diamond (yates, desierto, suites)", "15% en regalos y aliados", "750 AED de crédito mensual", "Two Love Club incluido"],
   },
   {
     id: "royal", name: "Royal Black", rank: 4, monthly: 9_999_00, yearly: 99_990_00,
@@ -202,6 +202,10 @@ export const REPORT_REASONS = ["Perfil falso", "Comportamiento inapropiado", "So
 export const STREAM_LABEL: Record<string, string> = {
   suscripcion: "Suscripciones", regalo: "Regalos (margen)", comision_reserva: "Comisión acompañamiento", tarifa_servicio: "Tarifa de servicio",
   sala: "Salas TWO LOVE", seguro: "Comisión seguros", aliado: "Alianzas y patrocinio", evento: "Eventos privados",
+  // TWO LOVE Park (parque de citas físico)
+  park_cafe: "Park · Café y carta", park_pase: "Park · Pase de experiencias", park_maquinas: "Park · Máquinas",
+  park_cabinas: "Park · Cabinas de fotos", park_paquetes: "Park · Paquetes de fechas", park_talleres: "Park · Talleres",
+  park_club: "Park · Two Love Club", park_alianzas: "Park · Alianzas y eventos",
 };
 
 // Programa de referidos (fils)

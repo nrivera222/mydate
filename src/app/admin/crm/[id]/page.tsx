@@ -4,7 +4,9 @@ import { requireAdmin } from "@/lib/auth";
 import { all, one } from "@/lib/db";
 import { csv, getProfile, ratingSummary, verificationStatus, walletBalance } from "@/lib/users";
 import { archetypeLabel, STREAM_LABEL, VERIFICATION_TYPES } from "@/lib/catalog";
-import { money } from "@/lib/money";
+import { clp, money } from "@/lib/money";
+import { productById, STAMPS } from "@/lib/park-catalog";
+import { clubStatus, coupleOf } from "@/lib/park";
 import { addCrmNote, grantCredit, setUserStatus } from "../../../actions/admin";
 import { Avatar, Flash, sp, Stars, Stat, TierBadge, type SP } from "@/components/ui";
 import { getT } from "@/lib/i18n";
@@ -30,6 +32,10 @@ export default async function Customer360({ params, searchParams }: { params: Pr
     "SELECT id, kind, status, total, start_at FROM bookings WHERE client_id = ? OR provider_id = ? ORDER BY id DESC LIMIT 10", p.user_id, p.user_id,
   );
   const reports = one<{ n: number }>("SELECT COUNT(*) AS n FROM reports WHERE reported_id = ?", p.user_id)!.n;
+  const parkRows = all<{ id: number; product: string; status: string; total: number; slot_at: string }>("SELECT id, product, status, total, slot_at FROM park_bookings WHERE user_id = ? OR partner_id = ? ORDER BY slot_at DESC LIMIT 10", p.user_id, p.user_id);
+  const parkStamps = one<{ n: number }>("SELECT COUNT(*) AS n FROM park_stamps WHERE user_id = ?", p.user_id)!.n;
+  const parkClub = clubStatus(p.user_id, p.tier);
+  const parkCouple = coupleOf(p.user_id);
   const policy = one<{ plan: string; coverage: number }>("SELECT plan, coverage FROM insurance_policies WHERE user_id = ? AND status = 'active' ORDER BY id DESC", p.user_id);
 
   return (
@@ -108,6 +114,16 @@ export default async function Customer360({ params, searchParams }: { params: Pr
           <table className="tbl"><tbody>{bookings.map((b) => <tr key={b.id}><td>#{b.id}</td><td>{t(b.kind)}</td><td>{t(b.status)}</td><td className="text-muted">{b.start_at.slice(0, 10)}</td><td className="text-end">{money(b.total)}</td></tr>)}</tbody></table>
         </section>
       </div>
+      <section className="card mt-6 overflow-x-auto">
+        <h2 className="h2">{t("TWO LOVE Park")}</h2>
+        <p className="mt-1 text-sm text-muted">
+          {t("Sellos {n}/{total}", { n: parkStamps, total: STAMPS.length })} · {parkClub.active ? t("Two Love Club activo") : t("Sin Club")}
+          {parkCouple ? ` · ${t("En pareja desde el {date}", { date: parkCouple.since })}` : ""}
+        </p>
+        {parkRows.length > 0 && (
+          <table className="tbl mt-3"><tbody>{parkRows.map((b) => <tr key={b.id}><td className="text-muted">{b.slot_at.slice(0, 16)}</td><td>{t(productById(b.product)?.name ?? b.product)}</td><td>{t(b.status)}</td><td className="text-end">{clp(b.total)}</td></tr>)}</tbody></table>
+        )}
+      </section>
     </div>
   );
 }

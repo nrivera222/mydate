@@ -58,6 +58,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
             </div>
           )}
           {matched && <Link href={`/mensajes/${p.user_id}`} className="btn-brand mt-2 w-full">{t("💬 Enviar mensaje")}</Link>}
+          {matched && <Link href={`/park/reservar?p=completa&partner=${p.user_id}`} className="btn-ghost mt-2 w-full">{t("💞 Invitar a una cita en TWO LOVE Park")}</Link>}
         </div>
 
         <div className="space-y-6 lg:col-span-3">

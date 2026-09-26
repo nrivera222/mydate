@@ -13,6 +13,7 @@ import { getT } from "@/lib/i18n";
 const TX_LABEL: Record<string, string> = {
   recarga: "Recarga", bono: "Bono", suscripcion: "Membresía", regalo: "Regalo enviado", regalo_recibido: "Regalo recibido", custodia: "Custodia",
   reembolso: "Reembolso", ganancia: "Ganancia", sala: "Sala TWO LOVE", seguro: "Seguro de vida", retiro: "Retiro", evento: "Evento",
+  park: "TWO LOVE Park", park_club: "Two Love Club",
 };
 
 export default async function Wallet({ searchParams }: { searchParams: SP }) {

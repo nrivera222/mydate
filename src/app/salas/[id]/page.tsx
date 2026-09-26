@@ -31,7 +31,7 @@ export default async function LoungeDetail({ params, searchParams }: { params: P
     <div className="grid gap-8 lg:grid-cols-5">
       <div className="space-y-6 lg:col-span-3">
         <Flash ok={sp(q.ok)} error={sp(q.error)} />
-        <div className="card flex h-64 items-center justify-center bg-[radial-gradient(circle_at_30%_20%,rgba(201,162,75,0.35),transparent_60%)] text-8xl">
+        <div className="card flex h-64 items-center justify-center bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.4),transparent_60%)] text-8xl">
           {KIND_ICON[l.kind] ?? "✨"}
         </div>
         <div>

@@ -1,3 +1,4 @@
+import { seedParkDemo } from "./park-seed";
 import type { DatabaseSync } from "node:sqlite";
 import bcrypt from "bcryptjs";
 import { ARCHETYPES, CITIES, COMPANION_ACTIVITIES, INSURANCE_PLANS, INTERESTS, LANGUAGES, TIERS, TRAITS, VAT_RATE, PROVIDER_COMMISSION } from "./catalog";
@@ -319,4 +320,8 @@ export function seed(conn: DatabaseSync) {
   nIns.run(demoId, "match", "Alguien te ha dado un Super Like ★", "Descubre quién desde Descubrir.", "/descubrir", daysAgo(4));
   nIns.run(demoId, "evento", "Nuevo evento: Sunset Singles en yate", "Quedan pocas plazas.", "/eventos", daysAgo(1));
   nIns.run(pendingId, "sistema", "Bienvenido/a a TWO LOVE", "Completa tus 5 verificaciones para empezar a conectar.", "/verificacion", daysAgo(1));
+
+  // TWO LOVE Park: local piloto en Santiago con 5 meses de historial
+  seedParkDemo(conn, { r, demoId, partnerId: men[0]?.user_id ?? null, ids });
+  nIns.run(demoId, "reserva", "Día 100 en 3 días 💞", "Celebradlo en TWO LOVE Park con el paquete Día 100.", "/park/pasaporte", daysAgo(0, 9));
 }

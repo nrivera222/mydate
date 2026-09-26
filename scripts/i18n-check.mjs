@@ -75,11 +75,24 @@ c.RATING_TAGS.forEach((x) => add(x, "catalog"));
 c.REPORT_REASONS.forEach((x) => add(x, "catalog"));
 Object.values(c.STREAM_LABEL).forEach((x) => add(x, "catalog"));
 
+// TWO LOVE Park
+const park = await import(path.join(root, "src/lib/park-catalog.ts"));
+for (const x of park.STAMPS) add(x.label, "park");
+for (const x of park.PARK_ZONES) { add(x.name, "park"); add(x.desc, "park"); }
+for (const x of park.PARK_PRODUCTS) { add(x.name, "park"); x.includes.forEach((i) => add(i, "park")); if (x.badge) add(x.badge, "park"); }
+Object.values(park.PRODUCT_KIND_LABEL).forEach((x) => add(x, "park"));
+park.DESTINATIONS.forEach((x) => add(x, "park"));
+park.CLUB.benefits.forEach((x) => add(x, "park"));
+for (const x of park.SEGMENTS) { add(x.range, "park"); add(x.note, "park"); }
+for (const x of park.ROADMAP) { add(x.when, "park"); add(x.name, "park"); add(x.desc, "park"); }
+["Día {n}", "Cumplemes {n}", "Aniversario {n}", "Hoy es vuestro hito en TWO LOVE Park 💞", "Se acerca un hito de pareja 💞"].forEach((x) => add(x, "park"));
+
 // Valores internos que se muestran traducidos (estados, tipos, canales, etapas del CRM)
 const ENUMS = ["requested", "accepted", "completed", "declined", "cancelled", "disputed", "companion", "lounge", "approved", "pending", "rejected",
   "nota", "llamada", "concierge", "incidencia", "pagado", "preparando", "entregado", "nuevo", "en_curso", "resuelto", "publicado", "cancelado",
   "organico", "instagram", "referido", "evento_privado", "alianza", "google", "interno",
-  "Suspendido", "Lead · verificando", "En riesgo", "VIP", "Suscriptor", "Verificado · free"];
+  "Suspendido", "Lead · verificando", "En riesgo", "VIP", "Suscriptor", "Verificado · free",
+  "reservada", "completada", "cancelada", "no_show"];
 ENUMS.forEach((x) => add(x, "enum"));
 
 // Contenido sembrado
@@ -91,6 +104,8 @@ if (fs.existsSync(dbFile)) {
   for (const r of q("SELECT description, amenities FROM lounges")) { add(r.description, "db:lounges"); r.amenities.split(",").forEach((a) => add(a.trim(), "db:lounges")); }
   for (const r of q("SELECT benefit FROM partners")) add(r.benefit, "db:partners");
   for (const r of q("SELECT title, description, venue FROM events")) { add(r.title, "db:events"); add(r.description, "db:events"); add(r.venue, "db:events"); }
+  for (const r of q("SELECT city FROM park_venues")) add(r.city, "db:park");
+  for (const r of q("SELECT name FROM park_machines")) add(r.name, "db:park");
 } else {
   console.warn("Aviso: no hay base de datos; no se comprueba el contenido sembrado.");
 }

@@ -34,7 +34,7 @@ export default async function EventDetail({ params, searchParams }: { params: Pr
     <div className="grid gap-8 lg:grid-cols-5">
       <div className="space-y-6 lg:col-span-3">
         <Flash ok={sp(q.ok)} error={sp(q.error)} />
-        <div className="card flex h-56 items-center justify-center bg-[radial-gradient(circle_at_30%_20%,rgba(201,162,75,0.35),transparent_60%)] text-8xl">{e.emoji}</div>
+        <div className="card flex h-56 items-center justify-center bg-[radial-gradient(circle_at_30%_20%,rgba(139,92,246,0.4),transparent_60%)] text-8xl">{e.emoji}</div>
         <div>
           <div className="flex gap-2"><TierBadge tier={e.min_tier} />{e.status !== "publicado" && <span className="chip border-rose/40 text-rose">{t("Cancelado")}</span>}</div>
           <h1 className="h1 mt-3">{t(e.title)}</h1>

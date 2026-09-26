@@ -15,7 +15,7 @@ npm install
 npm run dev            # http://localhost:3000
 ```
 
-La primera petición crea `data/twolove.db` y la llena con datos de demostración (28 miembros, aliados, Salas, regalos, reservas e historial de ingresos de 6 meses).
+La primera petición crea `data/twolove.db` y la llena con datos de demostración (28 miembros, aliados, Salas, regalos, reservas, historial de ingresos de 6 meses y 5 meses de operación del local piloto de TWO LOVE Park).
 
 | Cuenta | Email | Contraseña |
 |---|---|---|
@@ -60,7 +60,7 @@ La interfaz está disponible en **español, inglés y árabe** (con dirección R
 
 - Las traducciones viven en `src/lib/i18n/en.ts` y `src/lib/i18n/ar.ts`; la clave es el texto original en español (`t("Guardar perfil")`).
 - Los avisos de las acciones y las notificaciones guardadas se traducen al mostrarse, reconociendo partes variables (`"Recarga de {a} completada."`) y reformateando importes al idioma activo.
-- `npm run i18n:check` verifica que todo texto de la interfaz, del catálogo y del contenido sembrado tiene traducción en ambos idiomas (1.061 claves).
+- `npm run i18n:check` verifica que todo texto de la interfaz, del catálogo y del contenido sembrado tiene traducción en ambos idiomas (1.408 claves).
 - El contenido que escribe cada miembro (biografía, ocupación, mensajes) no se traduce.
 
 ## Qué incluye
@@ -84,6 +84,21 @@ La interfaz está disponible en **español, inglés y árabe** (con dirección R
 | Notificaciones | `/notificaciones` | Matches, Super Likes, mensajes, reservas, pagos liberados, regalos, verificaciones, eventos y referidos. Contador en la cabecera. |
 | Invita y gana | `/billetera#invitar` | Código personal: el invitado recibe 50 AED extra y quien invita 150 AED cuando el invitado contrata su primera membresía. |
 | Valoraciones y seguridad | `/reservas`, `/perfil/[id]` | Estrellas + etiquetas tras cada encuentro; denunciar y bloquear. |
+
+### TWO LOVE Park — el parque de citas (piloto en Santiago de Chile)
+Segundo mundo del ecosistema, basado en el plan para inversionistas: un local físico con café-juego, escenarios (viajes simulados, mini cine, «recrea cómo se conocieron»), juegos, cabinas de fotos, máquinas y paquetes para fechas especiales. Usa **la misma cuenta, billetera, notificaciones y membresía** que TWO LOVE Private; los precios están en CLP (IVA 19 % incluido) y se cobran desde la billetera en AED al tipo de referencia (`CLP_PER_AED` en `src/lib/park-catalog.ts`).
+
+| Módulo | Ruta | Descripción |
+|---|---|---|
+| Presentación | `/park` | Zonas, menú de citas (Clásica, Completa, Viaje), fechas especiales (cumplemes, día 100, cumpleaños, aniversario, recrea, pedida de mano), talleres, Club, segmentos y locales. Pública. |
+| Reservas | `/park/reservar` | Franjas horarias con cupo por experiencia, anticipo del 30 % desde la billetera, descuento de la membresía TWO LOVE o del Club, invitación a la pareja o a un match, destino de la Cita Viaje y consentimiento de fotos. |
+| Reserva de tutor | `/park/reservar?minor=1` | Parejas de 14 a 17 años: reserva un adulto con identidad verificada, solo de día (hasta las 19:00), sin alcohol, sin fotos ni álbum y solo en experiencias aptas. Los menores no tienen cuenta. |
+| Mis citas | `/park/mis-citas` | Código QR para el check-in, estado, pago, cancelación (gratis hasta 48 h antes) e historial con sellos y álbum. |
+| Pasaporte y pareja | `/park/pasaporte` | 6 sellos (viaje, cine, recrea, misterio, cabina, taller) con Cita Clásica de regalo al completarlo; contador de días de pololeo compartido por código, próximos hitos y avisos 7 días antes; Two Love Club (CLP 7.900/mes, 10 % de descuento, incluido en Diamond y Royal Black). |
+| Álbum por QR | `/park/album/[token]` | Fotos de cabina cifradas en disco, accesibles con el enlace durante 30 días y solo si la pareja dio su consentimiento. |
+| Operación del local | `/admin/park` | Agenda (check-in con cobro del saldo, completar y sellar, no presentados, cancelación con devolución, subida de fotos), caja por línea de ingreso con parejas sin reserva, parejas e ingresos por mes, EBITDA estimado, **regla de decisión del mes 6** (umbral de 900 parejas), ingresos frente al caso base, socios del Club y recompra a 60 días, mezcla de segmentos, recuperación de la inversión de cada máquina y cabina y hoja de ruta. |
+
+Integración: las 8 líneas de ingreso del Park aparecen en el ERP, la ficha 360° del CRM muestra reservas, sellos, Club y pareja, los perfiles de match ofrecen «Invitar a una cita en TWO LOVE Park» y las membresías dan descuento en el Park.
 
 ### Back-office (`/admin`, solo rol admin)
 - **Resumen**: miembros, % verificados, MRR, ingresos y GMV a 30 días, ingresos por mes y por línea, distribución por membresía, ciudad y prototipo.

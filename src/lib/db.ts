@@ -3,6 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 import { seed } from "./seed";
+import { seedParkReference } from "./park-seed";
 
 const SCHEMA = `
 PRAGMA journal_mode = WAL;
@@ -323,6 +324,106 @@ CREATE TABLE IF NOT EXISTS payments (
   status TEXT NOT NULL DEFAULT 'pendiente',      -- pendiente | pagado | fallido
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- ── TWO LOVE Park: parque de citas físico (importes en CLP) ──────────────────
+CREATE TABLE IF NOT EXISTS park_venues (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  city TEXT NOT NULL,
+  country TEXT NOT NULL DEFAULT 'Chile',
+  size_m2 INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'abierto',        -- abierto | proximamente
+  opens_on TEXT,                                 -- fecha de apertura (inicio del piloto)
+  address TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS park_couples (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_a INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_b INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  partner_name TEXT NOT NULL DEFAULT '',
+  since TEXT NOT NULL,                           -- fecha de inicio del pololeo (YYYY-MM-DD)
+  code TEXT NOT NULL UNIQUE,                     -- código para que la pareja se una
+  status TEXT NOT NULL DEFAULT 'activa',         -- activa | finalizada
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS park_bookings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  venue_id INTEGER NOT NULL REFERENCES park_venues(id),
+  product TEXT NOT NULL,
+  slot_at TEXT NOT NULL,                         -- inicio (hora local del local)
+  partner_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  partner_name TEXT NOT NULL DEFAULT '',
+  destination TEXT,
+  minor INTEGER NOT NULL DEFAULT 0,              -- reserva de tutor para pareja de 14 a 17 años
+  minor_names TEXT NOT NULL DEFAULT '',
+  photo_consent INTEGER NOT NULL DEFAULT 0,
+  price INTEGER NOT NULL,                        -- CLP con IVA, antes de descuento
+  discount INTEGER NOT NULL DEFAULT 0,
+  total INTEGER NOT NULL,
+  deposit INTEGER NOT NULL,
+  paid INTEGER NOT NULL DEFAULT 0,               -- CLP cobrados (billetera o local)
+  status TEXT NOT NULL DEFAULT 'reservada',      -- reservada | en_curso | completada | cancelada | no_show
+  qr TEXT NOT NULL UNIQUE,
+  album TEXT UNIQUE,
+  notes TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  checked_in_at TEXT,
+  completed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_park_bookings_slot ON park_bookings(venue_id, slot_at);
+
+CREATE TABLE IF NOT EXISTS park_stamps (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  stamp TEXT NOT NULL,
+  booking_id INTEGER REFERENCES park_bookings(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (user_id, stamp)
+);
+
+CREATE TABLE IF NOT EXISTS park_club (
+  user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  since TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'activa'          -- activa | cancelada (sin renovación)
+);
+
+CREATE TABLE IF NOT EXISTS park_reminders (
+  couple_id INTEGER NOT NULL REFERENCES park_couples(id) ON DELETE CASCADE,
+  key TEXT NOT NULL,
+  PRIMARY KEY (couple_id, key)
+);
+
+CREATE TABLE IF NOT EXISTS park_machines (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  venue_id INTEGER NOT NULL REFERENCES park_venues(id),
+  kind TEXT NOT NULL DEFAULT 'maquina',          -- maquina | cabina
+  name TEXT NOT NULL,
+  units INTEGER NOT NULL,
+  investment INTEGER NOT NULL,                   -- CLP
+  payback_months REAL NOT NULL                   -- meses de recuperación del plan
+);
+
+-- Caja del local: ventas sin reserva (café, máquinas, cabinas, talleres, alianzas) y parejas atendidas
+CREATE TABLE IF NOT EXISTS park_sales (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  venue_id INTEGER NOT NULL REFERENCES park_venues(id),
+  stream TEXT NOT NULL,
+  machine_id INTEGER REFERENCES park_machines(id),
+  amount INTEGER NOT NULL,                       -- CLP con IVA
+  couples INTEGER NOT NULL DEFAULT 0,            -- parejas sin reserva atendidas
+  note TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS park_photos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  booking_id INTEGER NOT NULL REFERENCES park_bookings(id) ON DELETE CASCADE,
+  file_path TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `;
 
 /** Migraciones aditivas para bases de datos creadas con versiones anteriores. */
@@ -350,6 +451,9 @@ export function db(): DatabaseSync {
   const count = conn.prepare("SELECT COUNT(*) AS n FROM users").get() as { n: number };
   if (count.n === 0) {
     tx(conn, () => seed(conn));
+  } else if ((conn.prepare("SELECT COUNT(*) AS n FROM park_venues").get() as { n: number }).n === 0) {
+    // Bases creadas antes de TWO LOVE Park: añade locales y máquinas (sin historial de demostración)
+    tx(conn, () => seedParkReference(conn));
   }
   conn.exec("UPDATE users SET referral_code = 'TL' || upper(hex(randomblob(3))) WHERE referral_code IS NULL");
   g.__twolove_db = conn;

@@ -83,6 +83,25 @@ export default async function Home() {
       </section>
 
       <section>
+        <h2 className="h1 text-center">{t("Un ecosistema, dos mundos")}</h2>
+        <p className="mx-auto mt-3 max-w-2xl text-center text-muted">{t("Una sola cuenta, billetera y membresía para conocer a alguien extraordinario y para vivir vuestras citas.")}</p>
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
+          <div className="card p-8">
+            <div className="chip-brand">{t("Dubái · Global")}</div>
+            <h3 className="mt-4 font-display text-3xl">TWO LOVE Private</h3>
+            <p className="mt-3 text-muted">{t("Citas verificadas de alto perfil, acompañamiento social, Salas TWO LOVE, eventos privados y concierge.")}</p>
+            <Link href="/registro" className="btn-ghost mt-6">{t("Solicitar acceso")}</Link>
+          </div>
+          <div className="card border-brand/50 bg-[radial-gradient(ellipse_at_90%_0%,rgba(192,38,211,0.22),transparent_60%)] p-8">
+            <div className="chip-brand">{t("Nuevo · Santiago de Chile")}</div>
+            <h3 className="mt-4 font-display text-3xl">TWO LOVE Park</h3>
+            <p className="mt-3 text-muted">{t("El parque de citas: café-juego, viajes simulados, misterio para dos, cabinas de fotos, talleres y paquetes para cumplemes, día 100 y aniversarios.")}</p>
+            <Link href="/park" className="btn-brand mt-6">{t("Descubrir el Park")}</Link>
+          </div>
+        </div>
+      </section>
+
+      <section>
         <h2 className="h1 text-center">{t("Salas TWO LOVE")}</h2>
         <p className="mx-auto mt-3 max-w-2xl text-center text-muted">{t("Recintos de la marca diseñados para citas: rooftops, yates, majlis en el desierto y suites privadas.")}</p>
         <div className="mt-10 grid gap-4 md:grid-cols-3">

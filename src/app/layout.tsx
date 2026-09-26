@@ -45,6 +45,7 @@ const MEMBER_NAV = [
   ["/descubrir", "Descubrir"],
   ["/acompanantes", "Acompañamiento"],
   ["/salas", "Salas TWO LOVE"],
+  ["/park", "TWO LOVE Park"],
   ["/eventos", "Eventos"],
   ["/regalos", "Regalos"],
   ["/mensajes", "Mensajes"],
@@ -61,6 +62,7 @@ const ADMIN_NAV = [
   ["/admin/crm", "CRM"],
   ["/admin/erp", "ERP"],
   ["/admin/eventos", "Eventos"],
+  ["/admin/park", "Park"],
   ["/admin/seguridad", "Seguridad"],
 ];
 
