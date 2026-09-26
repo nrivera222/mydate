@@ -1,14 +1,3 @@
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TWO LOVE · Pulse Sphere</title>
-<style>html,body{margin:0;height:100%;background:#020208;overflow:hidden}canvas{display:block;width:100vw;height:100vh}</style>
-</head>
-<body>
-<canvas id="c" aria-hidden="true"></canvas>
-<script>
 const PALETTE = [
     [56, 189, 248],
     [59, 130, 246],
@@ -246,17 +235,3 @@ function mountPulseSphere(canvas, { particles = 3600, still = false, time = 2.1,
     };
     return { draw, resize, destroy };
 }
-
-// Parámetros: ?n=partículas  ?still=1 (fotograma fijo)  ?t=instante  ?x,?y=desplazamiento  ?s=escala
-const q = new URLSearchParams(location.search);
-window.pulseSphere = mountPulseSphere(document.getElementById("c"), {
-  particles: Math.min(40000, Math.max(500, Number(q.get("n")) || 4800)),
-  still: q.get("still") === "1",
-  time: Number(q.get("t")) || 2.1,
-  offsetX: Number(q.get("x")) || 0,
-  offsetY: Number(q.get("y")) || 0,
-  scale: Number(q.get("s")) || 1,
-});
-</script>
-</body>
-</html>

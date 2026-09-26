@@ -53,10 +53,3 @@ body {
 html[dir="rtl"] body { font-family: var(--font-arabic); }
 html[dir="rtl"] .font-display:not(.brand) { font-family: var(--font-arabic); }
 html[dir="rtl"] [class*="tracking-"]:not(.brand) { letter-spacing: 0; }
-
-/* Logotipo "pulse sphere": destello que recorre el latido y halo que respira al mismo ritmo */
-.logo-pulse { stroke-dasharray: 14 86; stroke-dashoffset: 100; animation: logo-pulse 2.4s cubic-bezier(.6,.1,.3,1) infinite; }
-.logo-halo { transform-origin: 50% 50%; animation: logo-halo 2.4s ease-in-out infinite; }
-@keyframes logo-pulse { 0% { stroke-dashoffset: 100; opacity: 0 } 10% { opacity: 1 } 70% { opacity: 1 } 100% { stroke-dashoffset: -14; opacity: 0 } }
-@keyframes logo-halo { 0%, 100% { opacity: .55; transform: scale(.94) } 30% { opacity: 1; transform: scale(1.04) } 45% { opacity: .7; transform: scale(.98) } }
-@media (prefers-reduced-motion: reduce) { .logo-pulse, .logo-halo { animation: none; } .logo-pulse { display: none; } }

@@ -12,3 +12,4 @@ next-env.d.ts
 # Vídeos y paquetes de marca pesados (se generan con scripts/render-video.mjs)
 public/brand/*.mp4
 public/brand/*.zip
+public/brand/kit/

@@ -33,11 +33,15 @@ npm run db:reset        # borra la base; se regenera con datos demo
 
 ## Marca
 
-El símbolo de TWO LOVE es una **“pulse sphere”**: una esfera de latitudes doradas atravesada por un latido que deforma las líneas del ecuador. Se genera de forma procedural en SVG (`src/lib/logo.ts`), así que es nítido a cualquier tamaño; en la web se anima con un destello que recorre el pulso y un halo que late (se desactiva con *reducir movimiento*).
+Logotipo **Pulse Sphere**: una esfera de partículas (la comunidad global verificada) atravesada por un latido (la conexión real) y rodeada por dos órbitas entrelazadas (la pareja, *two*). Paleta neón púrpura y azul eléctrico sobre espacio profundo; tipografía Syncopate (logotipo) y Montserrat (textos), ambas con licencia SIL OFL.
 
-- Componente: `<LogoMark />` y `<Logo />` en `src/components/Logo.tsx`.
-- Archivos: `public/brand/two-love-mark.svg` (fondo oscuro) y `two-love-mark-transparent.svg`; favicon en `src/app/icon.svg`.
-- Regenerar tras cambiar la geometría: `node --experimental-strip-types scripts/generate-icons.mjs`.
+- Generador vectorial: `node scripts/build-logo.mjs` → `public/brand/logo/` (22 SVG con texto convertido a trazos): símbolo, horizontal, vertical, con claim ES/EN, wordmark, icono de app y favicon, en versiones color, clara, blanca y negra.
+- Kit publicitario: `node scripts/build-brand-kit.mjs` (necesita Playwright) → `public/brand/kit/` (no se versiona):
+  - `logo-png/`: PNG transparentes en alta resolución e iconos 16–512 px.
+  - `social/`: avatar de perfil y portadas de Facebook, X, LinkedIn y YouTube.
+  - `ads/es|en/`: post 1:1, retrato 4:5, historia/reel 9:16, horizontal 1.91:1 y banners de Google Display (300×250, 728×90, 160×600).
+  - `guide/TWO-LOVE-brand-guidelines.pdf`: manual de marca (concepto, versiones, área de respeto, color, tipografía, aplicaciones y usos incorrectos).
+- En la web: `<LogoMark />` y `<Logo />` (`src/components/Logo.tsx`) usan estos archivos; favicon en `src/app/icon.svg`.
 
 ### Visual "Pulse Sphere" (energía de partículas)
 

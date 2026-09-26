@@ -23,12 +23,15 @@ const html = `<!doctype html>
 <canvas id="c" aria-hidden="true"></canvas>
 <script>
 ${js}
-// Parámetros: ?n=partículas  ?still=1 (fotograma fijo)  ?t=instante
+// Parámetros: ?n=partículas  ?still=1 (fotograma fijo)  ?t=instante  ?x,?y=desplazamiento  ?s=escala
 const q = new URLSearchParams(location.search);
 window.pulseSphere = mountPulseSphere(document.getElementById("c"), {
   particles: Math.min(40000, Math.max(500, Number(q.get("n")) || 4800)),
   still: q.get("still") === "1",
   time: Number(q.get("t")) || 2.1,
+  offsetX: Number(q.get("x")) || 0,
+  offsetY: Number(q.get("y")) || 0,
+  scale: Number(q.get("s")) || 1,
 });
 </script>
 </body>
@@ -36,4 +39,6 @@ window.pulseSphere = mountPulseSphere(document.getElementById("c"), {
 `;
 fs.mkdirSync(path.join(root, "public/brand"), { recursive: true });
 fs.writeFileSync(path.join(root, "public/brand/pulse-sphere.html"), html);
+// Motor suelto para componer piezas gráficas (scripts/build-brand-kit.mjs)
+fs.writeFileSync(path.join(root, "public/brand/pulse-sphere.js"), js);
 console.log("public/brand/pulse-sphere.html", (html.length / 1024).toFixed(1), "KB");

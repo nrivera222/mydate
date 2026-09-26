@@ -8,6 +8,11 @@ export type PulseSphereOptions = {
   still?: boolean;
   /** Instante de la animación a representar cuando `still` está activo. */
   time?: number;
+  /** Desplazamiento horizontal/vertical del centro, en fracción del lienzo (-0.5…0.5). */
+  offsetX?: number;
+  offsetY?: number;
+  /** Escala del radio de la esfera (1 = 34% del lado menor). */
+  scale?: number;
 };
 
 export type PulseSphereHandle = { draw: (t: number) => void; resize: () => void; destroy: () => void };
@@ -47,7 +52,7 @@ function beat(t: number) {
   return Math.exp(-(((p - 0.08) / 0.045) ** 2)) + 0.6 * Math.exp(-(((p - 0.26) / 0.05) ** 2));
 }
 
-export function mountPulseSphere(canvas: HTMLCanvasElement, { particles = 3600, still = false, time = 2.1 }: PulseSphereOptions = {}): PulseSphereHandle {
+export function mountPulseSphere(canvas: HTMLCanvasElement, { particles = 3600, still = false, time = 2.1, offsetX = 0, offsetY = 0, scale = 1 }: PulseSphereOptions = {}): PulseSphereHandle {
   const ctx = canvas.getContext("2d")!;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const mobile = window.matchMedia("(max-width: 768px)").matches;
@@ -114,8 +119,8 @@ export function mountPulseSphere(canvas: HTMLCanvasElement, { particles = 3600, 
       ctx.fillRect(s.x * w, s.y * h, s.s, s.s);
     }
 
-    const R = Math.min(w, h) * 0.34;
-    const cx = w / 2 + mouse.x * 18, cy = h / 2 + mouse.y * 12;
+    const R = Math.min(w, h) * 0.34 * scale;
+    const cx = w * (0.5 + offsetX) + mouse.x * 18, cy = h * (0.5 + offsetY) + mouse.y * 12;
     const b = beat(t);
     const pulse = 1 + 0.035 * b;
 
