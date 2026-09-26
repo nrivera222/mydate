@@ -39,6 +39,13 @@ El símbolo de TWO LOVE es una **“pulse sphere”**: una esfera de latitudes d
 - Archivos: `public/brand/two-love-mark.svg` (fondo oscuro) y `two-love-mark-transparent.svg`; favicon en `src/app/icon.svg`.
 - Regenerar tras cambiar la geometría: `node --experimental-strip-types scripts/generate-icons.mjs`.
 
+### Visual "Pulse Sphere" (energía de partículas)
+
+Ilustración generativa en tiempo real (`src/components/PulseSphere.tsx`, canvas 2D sin dependencias): miles de partículas luminosas en una esfera que late, núcleo de plasma, filamentos de luz en órbita, niebla volumétrica, profundidad de campo, polvo *bokeh* y viñeta cinematográfica, en paleta púrpura neón y azul eléctrico. Reacciona al ratón (paralaje), se pausa fuera de pantalla, reduce partículas en móvil y queda estática con *reducir movimiento*.
+
+- Se usa como fondo de la portada y a pantalla completa, sin texto, en `/visual` (`?n=partículas&still=1&t=instante`).
+- Imágenes exportadas en `public/brand/`: `pulse-sphere-8k.jpg` (7680×4320), `pulse-sphere-4k.jpg`, `pulse-sphere-square.jpg` (2160×2160) y `pulse-sphere-vertical.jpg` (2160×3840, historias/reels).
+
 ## Idiomas
 
 La interfaz está disponible en **español, inglés y árabe** (con dirección RTL y tipografía árabe). El idioma se elige con el selector ES · EN · ع de la cabecera, se guarda en una cookie y, en la primera visita, se detecta del navegador (`Accept-Language`).

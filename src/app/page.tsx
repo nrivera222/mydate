@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogoMark } from "@/components/Logo";
+import { PulseSphere } from "@/components/PulseSphere";
 import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/auth";
 import { all, one } from "@/lib/db";
@@ -20,8 +20,12 @@ export default async function Home() {
 
   return (
     <div className="space-y-24">
-      <section className="relative overflow-hidden rounded-3xl border border-line bg-[radial-gradient(ellipse_at_top_right,rgba(201,162,75,0.25),transparent_60%)] px-6 py-20 md:px-14">
-        <LogoMark size={360} className="pointer-events-none absolute end-10 top-1/2 hidden -translate-y-1/2 lg:block" />
+      <section className="relative overflow-hidden rounded-3xl border border-line bg-[#020208] px-6 py-20 md:px-14">
+        <div className="pointer-events-none absolute inset-0">
+          <PulseSphere particles={3600} className="translate-x-[18%] rtl:-translate-x-[18%]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/75 to-transparent rtl:bg-gradient-to-l" />
+        </div>
+        <div className="relative z-10">
         <p className="chip-gold mb-6">{t("Dubái · Global · Solo por verificación")}</p>
         <h1 className="max-w-3xl font-display text-5xl leading-tight md:text-6xl">
           {t("El amor también merece")}{" "}<span className="gold-text">{t("excelencia")}</span>.
@@ -33,10 +37,11 @@ export default async function Home() {
           <Link href="/registro" className="btn-gold">{t("Solicitar acceso")}</Link>
           <Link href="/entrar" className="btn-ghost">{t("Ya soy miembro")}</Link>
         </div>
-        <div className="mt-14 grid max-w-xl grid-cols-3 gap-6 text-center">
+        <div className="mt-14 grid max-w-xl grid-cols-3 gap-6 rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-center backdrop-blur-md">
           <div><div className="font-display text-3xl text-gold-2">{stats.members}+</div><div className="text-xs text-muted">{t("miembros verificados")}</div></div>
           <div><div className="font-display text-3xl text-gold-2">{stats.cities}</div><div className="text-xs text-muted">{t("ciudades")}</div></div>
           <div><div className="font-display text-3xl text-gold-2">{stats.lounges}</div><div className="text-xs text-muted">{t("Salas TWO LOVE")}</div></div>
+        </div>
         </div>
       </section>
 
