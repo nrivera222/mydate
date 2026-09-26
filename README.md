@@ -35,12 +35,16 @@ npm run db:reset        # borra la base; se regenera con datos demo
 
 Logotipo **Pulse Sphere**: una esfera de partículas (la comunidad global verificada) atravesada por un latido (la conexión real) y rodeada por dos órbitas entrelazadas (la pareja, *two*). Paleta neón púrpura y azul eléctrico sobre espacio profundo; tipografía Syncopate (logotipo) y Montserrat (textos), ambas con licencia SIL OFL.
 
-- Generador vectorial: `node scripts/build-logo.mjs` → `public/brand/logo/` (22 SVG con texto convertido a trazos): símbolo, horizontal, vertical, con claim ES/EN, wordmark, icono de app y favicon, en versiones color, clara, blanca y negra.
+- **Logotipo principal con efecto Pulse Sphere** (`src/lib/pulse-logo.ts`, canvas 2D): la misma composición del logotipo construida con miles de partículas luminosas, núcleo de plasma, órbitas de luz con cometas, niebla volumétrica y brillo aditivo. Intro de ensamblado de 2,6 s y bucle perfecto de 10 s (8 latidos). Composiciones `horizontal`, `stacked` (con claim ES/EN) y `symbol`, con fondo espacial o transparente.
+  - `node scripts/build-visual.mjs` → `public/brand/pulse-logo.html` (animación autónoma: `?layout=horizontal|stacked|symbol&tag=es|en&transparent=1&intro=0&still=1&t=5`) y `pulse-logo.js`.
+  - Vídeos: `node scripts/render-video.mjs salida.mp4 1920 1080 12.6 3200 pulse-logo.html "layout=horizontal&fill=0.78" 0` (también vertical 1080×1920 con `layout=stacked&tag=es`, y bucles con `intro=0`).
+- Generador vectorial: `node scripts/build-logo.mjs` → `public/brand/logo/` (25 SVG con texto convertido a trazos): símbolo, horizontal, vertical, con claim ES/EN, wordmark, icono de app y favicon, en versiones color, clara, blanca y negra. Se usan en fondos claros, impresión y tamaños pequeños.
 - Kit publicitario: `node scripts/build-brand-kit.mjs` (necesita Playwright) → `public/brand/kit/` (no se versiona):
-  - `logo-png/`: PNG transparentes en alta resolución e iconos 16–512 px.
+  - `logo-fx/`: logotipo renderizado con el efecto (PNG transparente y JPG sobre fondo oscuro) en símbolo, horizontal, vertical y con claim ES/EN, e icono de app.
+  - `logo-png/`: PNG de las versiones vectoriales e iconos 16–512 px.
   - `social/`: avatar de perfil y portadas de Facebook, X, LinkedIn y YouTube.
-  - `ads/es|en/`: post 1:1, retrato 4:5, historia/reel 9:16, horizontal 1.91:1 y banners de Google Display (300×250, 728×90, 160×600).
-  - `guide/TWO-LOVE-brand-guidelines.pdf`: manual de marca (concepto, versiones, área de respeto, color, tipografía, aplicaciones y usos incorrectos).
+  - `ads/es|en/`: post 1:1, retrato 4:5, historia/reel 9:16, horizontal 1.91:1 y banners de Google Display (300×250, 728×90, 160×600), compuestos con el logotipo renderizado.
+  - `guide/TWO-LOVE-brand-guidelines.pdf`: manual de marca (concepto, versiones, logotipo animado, área de respeto, color, tipografía, aplicaciones y usos incorrectos).
 - En la web: `<LogoMark />` y `<Logo />` (`src/components/Logo.tsx`) usan estos archivos; favicon en `src/app/icon.svg`.
 
 ### Visual "Pulse Sphere" (energía de partículas)

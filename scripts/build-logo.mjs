@@ -138,8 +138,14 @@ function textPath(fontObj, text, size, tracking = 0) {
   const parts = [];
   for (const ch of text) {
     if (ch !== " ") {
-      const p = fontObj.getPath(ch, x, 0, size);
-      parts.push(p.toPathData(2));
+      // Serialización propia: toPathData() de opentype.js 2.0 emite NaN en algunas coordenadas
+      const n = (v) => (Math.round(v * 100) / 100).toString();
+      for (const c of fontObj.getPath(ch, x, 0, size).commands) {
+        if (c.type === "Z") parts.push("Z");
+        else if (c.type === "Q") parts.push(`Q${n(c.x1)} ${n(c.y1)} ${n(c.x)} ${n(c.y)}`);
+        else if (c.type === "C") parts.push(`C${n(c.x1)} ${n(c.y1)} ${n(c.x2)} ${n(c.y2)} ${n(c.x)} ${n(c.y)}`);
+        else parts.push(`${c.type}${n(c.x)} ${n(c.y)}`);
+      }
     }
     x += fontObj.getAdvanceWidth(ch, size) + tracking * size;
   }
@@ -206,6 +212,19 @@ export function wordmarkOnly(variant) {
   return svg(wm.width + pad * 2, wm.height + pad * 2, wm.defs, `<g transform="translate(${pad} ${f(pad + wm.height)})">${wm.body}</g>`);
 }
 
+/** Wordmark y claim sin márgenes, para el logotipo animado (src/lib/pulse-logo.ts). */
+export function wordmarkTight(variant = "color") {
+  const wm = wordmark(variant, { size: 120, id: `wt${variant}` });
+  return svg(wm.width, wm.height, wm.defs, `<g transform="translate(0 ${f(wm.height)})">${wm.body}</g>`);
+}
+
+export function taglineOnly(text, variant = "color") {
+  const tg = tagline(text, variant, 34);
+  return svg(tg.width, tg.height, "", `<g transform="translate(0 ${f(tg.height)})">${tg.body}</g>`);
+}
+
+export const TAGLINES = { es: "CITAS VERIFICADAS DE LUJO", en: "VERIFIED LUXURY DATING" };
+
 /** Icono de app / avatar: símbolo simplificado sobre fondo espacial (recorte circular seguro). */
 export function favicon() {
   const s = symbol("color", { detail: "icon", id: "fav" });
@@ -240,6 +259,9 @@ const files = {
   "two-love-wordmark-light.svg": wordmarkOnly("light"),
   "two-love-wordmark-white.svg": wordmarkOnly("white"),
   "two-love-wordmark-black.svg": wordmarkOnly("black"),
+  "two-love-wordmark-tight.svg": wordmarkTight(),
+  "two-love-tagline-es.svg": taglineOnly(TAGLINES.es),
+  "two-love-tagline-en.svg": taglineOnly(TAGLINES.en),
   "two-love-app-icon.svg": appIcon(),
   "two-love-favicon.svg": favicon(),
 };
