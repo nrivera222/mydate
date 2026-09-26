@@ -13,3 +13,4 @@ next-env.d.ts
 public/brand/*.mp4
 public/brand/*.zip
 public/brand/kit/
+shots/
