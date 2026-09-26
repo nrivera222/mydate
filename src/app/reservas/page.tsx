@@ -15,7 +15,7 @@ type Booking = {
 
 const STATUS: Record<string, [string, string]> = {
   requested: ["Solicitada", "chip border-sky-300/40 text-sky-200"],
-  accepted: ["Confirmada", "chip-gold"],
+  accepted: ["Confirmada", "chip-brand"],
   completed: ["Finalizada", "chip border-ok/40 text-ok"],
   declined: ["Rechazada", "chip"],
   cancelled: ["Cancelada", "chip"],
@@ -66,7 +66,7 @@ export default async function Bookings({ searchParams }: { searchParams: SP }) {
                   </div>
                   <h2 className="mt-2 font-display text-xl">
                     {b.kind === "lounge" ? b.lounge_name : t(b.activity)}
-                    {counterpart && counterpartId && <> · <Link href={`/perfil/${counterpartId}`} className="text-gold-2">{counterpart}</Link></>}
+                    {counterpart && counterpartId && <> · <Link href={`/perfil/${counterpartId}`} className="text-glow">{counterpart}</Link></>}
                   </h2>
                   <p className="text-sm text-muted">{b.start_at.slice(0, 16)} · {unitLabel(b.unit, b.quantity)}</p>
                   {b.notes && <p className="mt-1 text-sm text-muted">“{b.notes}”</p>}
@@ -74,12 +74,12 @@ export default async function Bookings({ searchParams }: { searchParams: SP }) {
                 <div className="text-end text-sm">
                   {asClient ? (
                     <>
-                      <div className="font-display text-2xl text-gold-2">{money(b.total)}</div>
+                      <div className="font-display text-2xl text-glow">{money(b.total)}</div>
                       <div className="text-xs text-muted">{t("Tarifa {a} · Servicio {b} · IVA {c}", { a: money(b.subtotal), b: money(b.service_fee), c: money(b.vat) })}</div>
                     </>
                   ) : (
                     <>
-                      <div className="font-display text-2xl text-gold-2">{money(b.provider_payout)}</div>
+                      <div className="font-display text-2xl text-glow">{money(b.provider_payout)}</div>
                       <div className="text-xs text-muted">{t("Neto tras comisión TWO LOVE")}</div>
                     </>
                   )}
@@ -89,12 +89,12 @@ export default async function Bookings({ searchParams }: { searchParams: SP }) {
               <div className="mt-4 flex flex-wrap gap-2">
                 {b.kind === "companion" && !asClient && b.status === "requested" && (
                   <>
-                    <form action={respondBooking}><Hidden id={b.id} /><input type="hidden" name="decision" value="accept" /><button className="btn-gold">{t("Aceptar")}</button></form>
+                    <form action={respondBooking}><Hidden id={b.id} /><input type="hidden" name="decision" value="accept" /><button className="btn-brand">{t("Aceptar")}</button></form>
                     <form action={respondBooking}><Hidden id={b.id} /><input type="hidden" name="decision" value="decline" /><button className="btn-ghost">{t("Rechazar")}</button></form>
                   </>
                 )}
                 {b.kind === "companion" && asClient && b.status === "accepted" && (
-                  <form action={completeBooking}><Hidden id={b.id} /><button className="btn-gold">{t("Confirmar encuentro y liberar pago")}</button></form>
+                  <form action={completeBooking}><Hidden id={b.id} /><button className="btn-brand">{t("Confirmar encuentro y liberar pago")}</button></form>
                 )}
                 {b.kind === "companion" && asClient && ["requested", "accepted"].includes(b.status) && (
                   <form action={cancelBooking}><Hidden id={b.id} /><button className="btn-ghost">{t("Cancelar")}</button></form>
@@ -119,7 +119,7 @@ export default async function Bookings({ searchParams }: { searchParams: SP }) {
 
               {b.kind === "companion" && b.status === "completed" && b.provider_id && (
                 b.my_rating ? (
-                  <p className="mt-3 text-sm text-muted">{t("Tu valoración:")}{" "}<span className="text-gold-2">{"★".repeat(b.my_rating)}</span></p>
+                  <p className="mt-3 text-sm text-muted">{t("Tu valoración:")}{" "}<span className="text-glow">{"★".repeat(b.my_rating)}</span></p>
                 ) : (
                   <form action={rate} className="mt-4 space-y-3 rounded-xl border border-line p-4">
                     <Hidden id={b.id} />
@@ -131,12 +131,12 @@ export default async function Bookings({ searchParams }: { searchParams: SP }) {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {RATING_TAGS.map((x) => (
-                        <label key={x} className="chip cursor-pointer has-[:checked]:border-gold has-[:checked]:text-gold-2"><input type="checkbox" className="sr-only" name="tags" value={x} />{t(x)}</label>
+                        <label key={x} className="chip cursor-pointer has-[:checked]:border-brand has-[:checked]:text-glow"><input type="checkbox" className="sr-only" name="tags" value={x} />{t(x)}</label>
                       ))}
                     </div>
                     <div className="flex gap-2">
                       <input className="input flex-1" name="comment" placeholder={t("Comentario (opcional)")} maxLength={500} />
-                      <button className="btn-gold">{t("Valorar")}</button>
+                      <button className="btn-brand">{t("Valorar")}</button>
                     </div>
                   </form>
                 )

@@ -34,9 +34,9 @@ export default async function Partners() {
               <div className="text-sm text-muted">{t(p.city)}</div>
               <p className="text-sm">{t(p.benefit)}</p>
               <div className="mt-auto flex items-center justify-between">
-                {p.discount > 0 && <span className="font-display text-2xl text-gold-2">-{pct(p.discount)}</span>}
+                {p.discount > 0 && <span className="font-display text-2xl text-glow">-{pct(p.discount)}</span>}
                 {unlocked ? (
-                  <span className="chip-gold">{t("Código:")} <span dir="ltr">TL-{p.id.toString().padStart(3, "0")}-{user.id}</span></span>
+                  <span className="chip-brand">{t("Código:")} <span dir="ltr">TL-{p.id.toString().padStart(3, "0")}-{user.id}</span></span>
                 ) : (
                   <span className="chip">🔒 {tierById(p.min_tier).name}</span>
                 )}

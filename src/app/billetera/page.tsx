@@ -36,7 +36,7 @@ export default async function Wallet({ searchParams }: { searchParams: SP }) {
     <div>
       <PageHeader title={t("Billetera digital")} subtitle={t("Recarga saldo para regalos, reservas, Salas y membresías. Los pagos de acompañamiento quedan en custodia hasta finalizar.")}>
         <div className="flex gap-1">
-          {Object.keys(FX).map((c) => <Link key={c} href={`/billetera?cur=${c}`} className={c === cur ? "chip-gold" : "chip"}>{c}</Link>)}
+          {Object.keys(FX).map((c) => <Link key={c} href={`/billetera?cur=${c}`} className={c === cur ? "chip-brand" : "chip"}>{c}</Link>)}
         </div>
       </PageHeader>
       <Flash ok={sp(q.ok)} error={sp(q.error)} />
@@ -52,7 +52,7 @@ export default async function Wallet({ searchParams }: { searchParams: SP }) {
           <h2 className="h2">{t("Recargar")}</h2>
           <div className="grid grid-cols-4 gap-2">
             {[500, 2000, 10000, 50000].map((a) => (
-              <label key={a} className="cursor-pointer rounded-xl border border-line p-3 text-center text-sm has-[:checked]:border-gold">
+              <label key={a} className="cursor-pointer rounded-xl border border-line p-3 text-center text-sm has-[:checked]:border-brand">
                 <input type="radio" name="amount" value={a} className="sr-only" defaultChecked={a === 2000} />
                 {money(a * 100)}
               </label>
@@ -67,7 +67,7 @@ export default async function Wallet({ searchParams }: { searchParams: SP }) {
               <option value="cripto">{t("USDC / Cripto (vía aliado regulado)")}</option>
             </select>
           </div>
-          <button className="btn-gold w-full" type="submit">{live ? t("Pagar con Stripe") : t("Recargar saldo")}</button>
+          <button className="btn-brand w-full" type="submit">{live ? t("Pagar con Stripe") : t("Recargar saldo")}</button>
           <p className="text-xs text-muted">{live ? t("Serás redirigido a la pasarela segura de Stripe (PCI-DSS). El saldo se abona al confirmarse el pago.") : t("Modo demostración: la recarga se aprueba al instante. Define STRIPE_SECRET_KEY para cobrar con tarjeta real.")}</p>
         </form>
 
@@ -93,14 +93,14 @@ export default async function Wallet({ searchParams }: { searchParams: SP }) {
             {t("Invita a personas de tu círculo. Reciben {welcome} extra al registrarse y tú ganas {reward} cuando contratan su primera membresía.", { welcome: money(REFERRAL_WELCOME), reward: money(REFERRAL_REWARD) })}
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <span className="rounded-xl border border-gold/40 px-4 py-2 font-mono text-lg tracking-widest text-gold-2">{me.referral_code}</span>
+            <span className="rounded-xl border border-brand/40 px-4 py-2 font-mono text-lg tracking-widest text-glow">{me.referral_code}</span>
             <code className="break-all text-xs text-muted" dir="ltr">/registro?ref={me.referral_code}</code>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-3 text-center md:grid-cols-1 md:text-start">
           <div><div className="label">{t("Invitados")}</div><div className="text-xl">{referrals.invited}</div></div>
           <div><div className="label">{t("Convertidos")}</div><div className="text-xl">{referrals.converted ?? 0}</div></div>
-          <div><div className="label">{t("Ganado")}</div><div className="text-xl text-gold-2">{money(referralEarnings, cur)}</div></div>
+          <div><div className="label">{t("Ganado")}</div><div className="text-xl text-glow">{money(referralEarnings, cur)}</div></div>
         </div>
       </section>
 

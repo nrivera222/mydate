@@ -65,14 +65,14 @@ export default async function Gifts({ searchParams }: { searchParams: SP }) {
                   const out = g.stock !== null && g.stock <= 0;
                   const net = Math.round(g.price * (1 - tier.giftDiscount));
                   return (
-                    <label key={g.id} className={`card flex cursor-pointer flex-col gap-2 has-[:checked]:border-gold ${out ? "opacity-40" : ""}`}>
+                    <label key={g.id} className={`card flex cursor-pointer flex-col gap-2 has-[:checked]:border-brand ${out ? "opacity-40" : ""}`}>
                       <input type="radio" name="gift" value={g.id} className="sr-only" disabled={out} required />
                       <div className="text-4xl">{g.emoji}</div>
                       <div className="font-medium">{t(g.name)}</div>
                       <p className="text-xs text-muted">{t(g.description)}</p>
                       {g.partner && <div className="text-xs text-muted">{t("por {partner}", { partner: g.partner })}</div>}
                       <div className="mt-auto flex items-baseline justify-between pt-2">
-                        <span className="text-gold-2">{money(net)}</span>
+                        <span className="text-glow">{money(net)}</span>
                         {tier.giftDiscount > 0 && <span className="text-xs text-muted line-through">{money(g.price)}</span>}
                       </div>
                       <div className="text-[10px] text-muted">{t("+ IVA {vat}%", { vat: VAT_RATE * 100 })}{g.stock !== null && ` · ${out ? t("Agotado") : t("{n} disponibles", { n: g.stock })}`}</div>
@@ -84,7 +84,7 @@ export default async function Gifts({ searchParams }: { searchParams: SP }) {
           );
         })}
         <div className="sticky bottom-4 flex justify-end">
-          <button className="btn-gold shadow-lg shadow-black/50" type="submit">{t("Enviar regalo seleccionado")}</button>
+          <button className="btn-brand shadow-lg shadow-black/50" type="submit">{t("Enviar regalo seleccionado")}</button>
         </div>
       </form>
 
@@ -98,7 +98,7 @@ export default async function Gifts({ searchParams }: { searchParams: SP }) {
                   <li key={o.id} className="flex items-center justify-between gap-3 border-b border-line/60 pb-2 last:border-0">
                     <span>{o.emoji} {t(o.name)} · <span className="text-muted">{t(title === "Enviados" ? "para {name}" : "de {name}", { name: o.other })}</span></span>
                     <span className="flex items-center gap-2">
-                      {title === "Recibidos" && o.recipient_credit > 0 && <span className="chip-gold">+{money(o.recipient_credit)}</span>}
+                      {title === "Recibidos" && o.recipient_credit > 0 && <span className="chip-brand">+{money(o.recipient_credit)}</span>}
                       <span className="chip">{t(o.status)}</span>
                     </span>
                   </li>

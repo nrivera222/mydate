@@ -15,7 +15,7 @@ export default async function RegisterPage({ searchParams }: { searchParams: SP 
       <p className="mt-2 text-center text-muted">{t("Crea tu cuenta y completa las 5 verificaciones para activar tu perfil.")}</p>
       <div className="card mt-8">
         <Flash ok={sp(q.ok)} error={sp(q.error)} />
-        {ref && <div className="mb-4 rounded-xl border border-gold/40 p-3 text-sm text-gold-2">Te ha invitado un miembro de TWO LOVE ({ref}). Recibirás un bono extra de bienvenida.</div>}
+        {ref && <div className="mb-4 rounded-xl border border-brand/40 p-3 text-sm text-glow">Te ha invitado un miembro de TWO LOVE ({ref}). Recibirás un bono extra de bienvenida.</div>}
         <form action={register} className="space-y-4">
           <input type="hidden" name="ref" value={ref} />
           <div>
@@ -44,10 +44,10 @@ export default async function RegisterPage({ searchParams }: { searchParams: SP 
             <input type="checkbox" name="terms" className="check mt-1" required />
             <span>{t("Soy mayor de 21 años y acepto los términos, la política de privacidad, el tratamiento de datos sensibles para verificación y el código de conducta.")}</span>
           </label>
-          <button className="btn-gold w-full" type="submit">{t("Crear cuenta")}</button>
+          <button className="btn-brand w-full" type="submit">{t("Crear cuenta")}</button>
         </form>
         <p className="mt-6 text-center text-sm text-muted">
-          {t("¿Ya eres miembro?")}{" "}<Link href="/entrar" className="text-gold-2">{t("Entrar")}</Link>
+          {t("¿Ya eres miembro?")}{" "}<Link href="/entrar" className="text-glow">{t("Entrar")}</Link>
         </p>
       </div>
     </div>

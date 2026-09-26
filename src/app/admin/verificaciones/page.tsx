@@ -32,16 +32,16 @@ export default async function VerificationQueue({ searchParams }: { searchParams
           return (
             <article key={r.id} className="card grid gap-4 md:grid-cols-3">
               <div>
-                <span className="chip-gold">{label(r.type)}</span>
-                <div className="mt-2 font-medium"><Link href={`/admin/crm/${r.user_id}`} className="hover:text-gold-2">{r.name}</Link></div>
+                <span className="chip-brand">{label(r.type)}</span>
+                <div className="mt-2 font-medium"><Link href={`/admin/crm/${r.user_id}`} className="hover:text-glow">{r.name}</Link></div>
                 <div className="text-sm text-muted">{r.email}</div>
                 <div className="text-xs text-muted">{t("Enviado {date}", { date: r.created_at.slice(0, 16) })}</div>
               </div>
               <div className="space-y-1 text-sm">
                 {Object.entries(data).filter(([k]) => k !== "traits").map(([k, v]) => (
-                  <div key={k}><span className="text-muted">{k}:</span> {typeof v === "string" && v.startsWith("private/") ? <a className="text-gold-2 underline" href={`/media/${v}`} target="_blank">{t("ver archivo")}</a> : String(v)}</div>
+                  <div key={k}><span className="text-muted">{k}:</span> {typeof v === "string" && v.startsWith("private/") ? <a className="text-glow underline" href={`/media/${v}`} target="_blank">{t("ver archivo")}</a> : String(v)}</div>
                 ))}
-                {r.file_path && <a className="text-gold-2 underline" href={`/media/${r.file_path}`} target="_blank">{t("Abrir documento adjunto")}</a>}
+                {r.file_path && <a className="text-glow underline" href={`/media/${r.file_path}`} target="_blank">{t("Abrir documento adjunto")}</a>}
                 {r.type === "photo" && r.photo_path && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={`/media/${r.photo_path}`} alt="" className="mt-2 h-32 w-32 rounded-xl object-cover" />
@@ -51,7 +51,7 @@ export default async function VerificationQueue({ searchParams }: { searchParams
                 <input type="hidden" name="id" value={r.id} />
                 <input className="input" name="notes" placeholder={t("Nota / motivo de rechazo")} maxLength={300} />
                 <div className="flex gap-2">
-                  <button className="btn-gold flex-1" name="decision" value="approve">{t("Aprobar")}</button>
+                  <button className="btn-brand flex-1" name="decision" value="approve">{t("Aprobar")}</button>
                   <button className="btn-danger flex-1" name="decision" value="reject">{t("Rechazar")}</button>
                 </div>
               </form>

@@ -1,5 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import "@fontsource/montserrat/400.css";
+import "@fontsource/montserrat/500.css";
+import "@fontsource/montserrat/600.css";
+import "@fontsource/montserrat/700.css";
+import "@fontsource/syncopate/700.css";
 import "./globals.css";
 import { currentUser } from "@/lib/auth";
 import { walletBalance } from "@/lib/users";
@@ -14,17 +19,21 @@ import { LogoMark } from "@/components/Logo";
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return {
+    // URLs absolutas de la tarjeta social (opengraph-image.jpg) en producción
+    metadataBase: process.env.APP_URL ? new URL(process.env.APP_URL) : undefined,
     title: t("TWO LOVE — Citas de alto perfil"),
     description: t("Ecosistema global de citas verificadas para personas de alto perfil: citas reales, acompañamiento social, Salas TWO LOVE y concierge."),
   };
 }
+
+export const viewport: Viewport = { themeColor: "#05040F", colorScheme: "dark" };
 
 function LanguageSwitcher({ current }: { current: string }) {
   return (
     <form action={setLocale} className="flex items-center gap-1 text-xs">
       {LOCALES.map((l) => (
         <button key={l} name="lang" value={l} type="submit" aria-pressed={l === current} title={LOCALE_NAMES[l]}
-          className={`rounded-full px-2 py-1 ${l === current ? "bg-gold/15 text-gold-2" : "text-muted hover:text-gold-2"}`}>
+          className={`rounded-full px-2 py-1 ${l === current ? "bg-brand/15 text-glow" : "text-muted hover:text-glow"}`}>
           {l === "ar" ? "ع" : l.toUpperCase()}
         </button>
       ))}
@@ -67,7 +76,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600&family=Noto+Kufi+Arabic:wght@400;500;600&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-screen">
         <header className="sticky top-0 z-30 border-b border-line bg-ink/90 backdrop-blur">
@@ -79,11 +88,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <div className="flex items-center gap-3 text-sm">
                 <span className="hidden md:block"><LanguageSwitcher current={t.locale} /></span>
                 {wallet && (
-                  <Link href="/billetera" className="chip-gold hidden sm:inline-flex" title={t("Saldo de billetera")}>
+                  <Link href="/billetera" className="chip-brand hidden sm:inline-flex" title={t("Saldo de billetera")}>
                     ◈ {money(wallet.balance)}
                   </Link>
                 )}
-                <Link href="/notificaciones" className="relative text-lg text-muted hover:text-gold-2" aria-label={t("Notificaciones ({n} sin leer)", { n: unread })}>
+                <Link href="/notificaciones" className="relative text-lg text-muted hover:text-glow" aria-label={t("Notificaciones ({n} sin leer)", { n: unread })}>
                   🔔
                   {unread > 0 && (
                     <span className="absolute -end-2 -top-1 min-w-4 rounded-full bg-rose px-1 text-center text-[10px] font-semibold leading-4 text-ink">{unread > 9 ? "9+" : unread}</span>
@@ -91,7 +100,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </Link>
                 <TierBadge tier={user.tier} />
                 {user.role !== "admin" && (
-                  <Link href="/perfil/editar" className="text-muted hover:text-gold-2">{user.name.split(" ")[0]}</Link>
+                  <Link href="/perfil/editar" className="text-muted hover:text-glow">{user.name.split(" ")[0]}</Link>
                 )}
                 <form action={logout}>
                   <button className="text-muted hover:text-rose" type="submit">{t("Salir")}</button>
@@ -101,19 +110,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <div className="flex items-center gap-2">
                 <span className="hidden sm:block"><LanguageSwitcher current={t.locale} /></span>
                 <Link href="/entrar" className="btn-ghost px-3 md:px-5">{t("Entrar")}</Link>
-                <Link href="/registro" className="btn-gold whitespace-nowrap px-3 md:px-5">{t("Unirme")}</Link>
+                <Link href="/registro" className="btn-brand whitespace-nowrap px-3 md:px-5">{t("Unirme")}</Link>
               </div>
             )}
           </div>
           {user && (
             <nav className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 pb-2 text-sm">
               {nav.map(([href, label]) => (
-                <Link key={href} href={href} className="whitespace-nowrap rounded-full px-3 py-1.5 text-muted hover:bg-ink-3 hover:text-gold-2">
+                <Link key={href} href={href} className="whitespace-nowrap rounded-full px-3 py-1.5 text-muted hover:bg-ink-3 hover:text-glow">
                   {t(label)}
                 </Link>
               ))}
               {user.role !== "admin" && (
-                <Link href="/verificacion" className="whitespace-nowrap rounded-full px-3 py-1.5 text-muted hover:bg-ink-3 hover:text-gold-2">{t("Verificación")}</Link>
+                <Link href="/verificacion" className="whitespace-nowrap rounded-full px-3 py-1.5 text-muted hover:bg-ink-3 hover:text-glow">{t("Verificación")}</Link>
               )}
             </nav>
           )}

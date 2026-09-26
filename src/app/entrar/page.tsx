@@ -23,17 +23,17 @@ export default async function LoginPage({ searchParams }: { searchParams: SP }) 
             <label className="label" htmlFor="password">{t("Contraseña")}</label>
             <input className="input" id="password" name="password" type="password" required autoComplete="current-password" />
           </div>
-          <button className="btn-gold w-full" type="submit">{t("Entrar")}</button>
+          <button className="btn-brand w-full" type="submit">{t("Entrar")}</button>
         </form>
         <p className="mt-6 text-center text-sm text-muted">
-          {t("¿Aún no eres miembro?")}{" "}<Link href="/registro" className="text-gold-2">{t("Solicita acceso")}</Link>
+          {t("¿Aún no eres miembro?")}{" "}<Link href="/registro" className="text-glow">{t("Solicita acceso")}</Link>
         </p>
       </div>
       <div className="card mt-6 text-sm text-muted">
         <div className="mb-2 font-medium text-ivory">{t("Cuentas de demostración")}</div>
-        <p>{t("Miembro Platinum:")}{" "}<code className="text-gold-2">demo@twolove.app</code></p>
-        <p>{t("Administración (CRM/ERP):")}{" "}<code className="text-gold-2">admin@twolove.app</code></p>
-        <p>{t("Contraseña:")}{" "}<code className="text-gold-2">twolove2026</code></p>
+        <p>{t("Miembro Platinum:")}{" "}<code className="text-glow">demo@twolove.app</code></p>
+        <p>{t("Administración (CRM/ERP):")}{" "}<code className="text-glow">admin@twolove.app</code></p>
+        <p>{t("Contraseña:")}{" "}<code className="text-glow">twolove2026</code></p>
       </div>
     </div>
   );

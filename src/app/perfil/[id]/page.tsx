@@ -52,12 +52,12 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                   <input type="hidden" name="target" value={p.user_id} />
                   <input type="hidden" name="kind" value={kind} />
                   <input type="hidden" name="back" value={`/perfil/${p.user_id}`} />
-                  <button className={`${kind === "like" ? "btn-gold" : "btn-ghost"} w-full`} type="submit">{kind === "pass" ? "✕" : kind === "like" ? t("♥ Like") : t("★ Super")}</button>
+                  <button className={`${kind === "like" ? "btn-brand" : "btn-ghost"} w-full`} type="submit">{kind === "pass" ? "✕" : kind === "like" ? t("♥ Like") : t("★ Super")}</button>
                 </form>
               ))}
             </div>
           )}
-          {matched && <Link href={`/mensajes/${p.user_id}`} className="btn-gold mt-2 w-full">{t("💬 Enviar mensaje")}</Link>}
+          {matched && <Link href={`/mensajes/${p.user_id}`} className="btn-brand mt-2 w-full">{t("💬 Enviar mensaje")}</Link>}
         </div>
 
         <div className="space-y-6 lg:col-span-3">
@@ -65,7 +65,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
             <div className="flex flex-wrap items-center gap-2">
               <TierBadge tier={p.tier} />
               <VerifiedBadge count={v.approved} />
-              {matched && <span className="chip-gold">{t("♥ Match")}</span>}
+              {matched && <span className="chip-brand">{t("♥ Match")}</span>}
               {received > 0 && <span className="chip">🎁 {received} regalos recibidos</span>}
             </div>
             <h1 className="h1 mt-3">{p.name}{age(p) ? `, ${age(p)}` : ""}</h1>
@@ -83,17 +83,17 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {csv(p.interests).map((i) => <span key={i} className={csv(me.interests).includes(i) ? "chip-gold" : "chip"}>{t(i)}</span>)}
+            {csv(p.interests).map((i) => <span key={i} className={csv(me.interests).includes(i) ? "chip-brand" : "chip"}>{t(i)}</span>)}
           </div>
 
           {!self && (
             <div className="card">
-              <div className="flex items-center justify-between"><h2 className="h2">{t("Compatibilidad")}</h2><span className="font-display text-3xl text-gold-2">{compat.score}%</span></div>
+              <div className="flex items-center justify-between"><h2 className="h2">{t("Compatibilidad")}</h2><span className="font-display text-3xl text-glow">{compat.score}%</span></div>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 {Object.entries(compat.breakdown).map(([k, val]) => (
                   <div key={k}>
                     <div className="flex justify-between text-xs text-muted"><span>{t(BREAKDOWN_LABELS[k])}</span><span>{Math.round(val * 100)}%</span></div>
-                    <div className="mt-1 h-1.5 rounded-full bg-ink-3"><div className="h-1.5 rounded-full bg-gold" style={{ width: `${val * 100}%` }} /></div>
+                    <div className="mt-1 h-1.5 rounded-full bg-ink-3"><div className="h-1.5 rounded-full bg-brand" style={{ width: `${val * 100}%` }} /></div>
                   </div>
                 ))}
               </div>
@@ -104,7 +104,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
             <h2 className="h2">{t("Verificaciones")}</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {VERIFICATION_TYPES.map((x) => (
-                <span key={x.id} className={v.map[x.id]?.status === "approved" ? "chip-gold" : "chip"}>{v.map[x.id]?.status === "approved" ? "✓" : "○"} {t(x.label)}</span>
+                <span key={x.id} className={v.map[x.id]?.status === "approved" ? "chip-brand" : "chip"}>{v.map[x.id]?.status === "approved" ? "✓" : "○"} {t(x.label)}</span>
               ))}
             </div>
             {Object.keys(traits).length > 0 && (
@@ -113,13 +113,13 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
           </div>
 
           {offer && (
-            <div className="card flex flex-wrap items-center justify-between gap-3 border-gold/40">
+            <div className="card flex flex-wrap items-center justify-between gap-3 border-brand/40">
               <div>
-                <div className="chip-gold">{t("Acompañamiento social")}</div>
+                <div className="chip-brand">{t("Acompañamiento social")}</div>
                 <div className="mt-2 font-display text-lg">{offer.headline}</div>
                 {offer.rate_hour && <div className="text-sm text-muted">{t("Desde {price}/hora", { price: money(offer.rate_hour) })}</div>}
               </div>
-              {!self && <Link href={`/acompanantes/${p.user_id}`} className="btn-gold">{t("Ver tarifas y reservar")}</Link>}
+              {!self && <Link href={`/acompanantes/${p.user_id}`} className="btn-brand">{t("Ver tarifas y reservar")}</Link>}
             </div>
           )}
 
@@ -130,18 +130,18 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
               <input type="hidden" name="back" value={`/perfil/${p.user_id}`} />
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {gifts.slice(0, 8).map((g) => (
-                  <label key={g.id} className="cursor-pointer rounded-xl border border-line p-3 text-center text-sm has-[:checked]:border-gold">
+                  <label key={g.id} className="cursor-pointer rounded-xl border border-line p-3 text-center text-sm has-[:checked]:border-brand">
                     <input type="radio" name="gift" value={g.id} className="sr-only" required />
                     <div className="text-2xl">{g.emoji}</div>
                     <div className="mt-1 line-clamp-1">{t(g.name)}</div>
-                    <div className="text-xs text-gold-2">{money(g.price)}</div>
+                    <div className="text-xs text-glow">{money(g.price)}</div>
                   </label>
                 ))}
               </div>
               <input className="input" name="message" placeholder={t("Mensaje (opcional)")} maxLength={280} />
               <div className="flex items-center justify-between">
-                <Link href={`/regalos?to=${p.user_id}`} className="text-sm text-gold-2">{t("Ver catálogo completo →")}</Link>
-                <button className="btn-gold" type="submit">{t("Enviar regalo")}</button>
+                <Link href={`/regalos?to=${p.user_id}`} className="text-sm text-glow">{t("Ver catálogo completo →")}</Link>
+                <button className="btn-brand" type="submit">{t("Enviar regalo")}</button>
               </div>
             </form>
           )}

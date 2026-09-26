@@ -41,10 +41,10 @@ export default async function AdminHome() {
         <Stat label={t("Activos 7 días")} value={active7} hint={t("{n} matches totales", { n: matches })} />
       </div>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
-        <Link href="/admin/verificaciones" className="card flex items-center justify-between hover:border-gold/60">
-          <span>{t("Verificaciones pendientes")}</span><span className="font-display text-3xl text-gold-2">{pendingVer}</span>
+        <Link href="/admin/verificaciones" className="card flex items-center justify-between hover:border-brand/60">
+          <span>{t("Verificaciones pendientes")}</span><span className="font-display text-3xl text-glow">{pendingVer}</span>
         </Link>
-        <Link href="/admin/seguridad" className="card flex items-center justify-between hover:border-gold/60">
+        <Link href="/admin/seguridad" className="card flex items-center justify-between hover:border-brand/60">
           <span>{t("Denuncias abiertas")}</span><span className={`font-display text-3xl ${openReports ? "text-rose" : "text-ok"}`}>{openReports}</span>
         </Link>
       </div>

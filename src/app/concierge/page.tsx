@@ -23,13 +23,13 @@ export default async function Concierge({ searchParams }: { searchParams: SP }) 
         <form action={requestConcierge} className="card space-y-3">
           <label className="label" htmlFor="body">{t("¿En qué podemos ayudarte?")}</label>
           <textarea className="input min-h-32" id="body" name="body" required maxLength={1000} placeholder={t("p. ej. Mesa para dos en Mónaco durante el Grand Prix y un ramo de peonías en la mesa.")} />
-          <button className="btn-gold" type="submit">{t("Enviar al concierge")}</button>
-          {tier.matchmaker && <p className="text-sm text-gold-2">{t("Como miembro Royal Black, tu matchmaker personal también recibirá esta solicitud.")}</p>}
+          <button className="btn-brand" type="submit">{t("Enviar al concierge")}</button>
+          {tier.matchmaker && <p className="text-sm text-glow">{t("Como miembro Royal Black, tu matchmaker personal también recibirá esta solicitud.")}</p>}
         </form>
       ) : (
         <div className="card space-y-4 text-center">
           <p className="text-muted">{t("El concierge 24/7 está incluido en las membresías Diamond y Royal Black.")}</p>
-          <Link href="/membresias" className="btn-gold">{t("Ver membresías")}</Link>
+          <Link href="/membresias" className="btn-brand">{t("Ver membresías")}</Link>
         </div>
       )}
       {requests.length > 0 && (

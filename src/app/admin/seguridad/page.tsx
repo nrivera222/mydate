@@ -38,7 +38,7 @@ export default async function Safety({ searchParams }: { searchParams: SP }) {
                 <div><div className="font-medium">#{d.id} · {t(d.activity)}</div><div className="text-sm text-muted">{d.client} → {d.provider} · {d.start_at.slice(0, 16)} · {t("{amount} en custodia", { amount: money(d.total) })}</div></div>
                 <div className="flex gap-2">
                   <form action={resolveDispute}><input type="hidden" name="booking" value={d.id} /><input type="hidden" name="favor" value="client" /><button className="btn-ghost">{t("Reembolsar cliente")}</button></form>
-                  <form action={resolveDispute}><input type="hidden" name="booking" value={d.id} /><input type="hidden" name="favor" value="provider" /><button className="btn-gold">{t("Pagar acompañante")}</button></form>
+                  <form action={resolveDispute}><input type="hidden" name="booking" value={d.id} /><input type="hidden" name="favor" value="provider" /><button className="btn-brand">{t("Pagar acompañante")}</button></form>
                 </div>
               </div>
             ))}
@@ -70,7 +70,7 @@ export default async function Safety({ searchParams }: { searchParams: SP }) {
             {reports.map((r) => (
               <tr key={r.id}>
                 <td className="whitespace-nowrap text-muted">{r.created_at.slice(0, 10)}</td><td>{r.reporter}</td>
-                <td><Link href={`/admin/crm/${r.reported_id}`} className="text-gold-2">{r.reported}</Link></td>
+                <td><Link href={`/admin/crm/${r.reported_id}`} className="text-glow">{r.reported}</Link></td>
                 <td>{t(r.reason)}</td><td className="text-muted">{r.details}</td>
                 <td>{r.status === "abierto" ? <form action={resolveReport}><input type="hidden" name="id" value={r.id} /><button className="btn-ghost px-3 py-1">{t("Resolver")}</button></form> : <span className="chip">{t("Resuelta")}</span>}</td>
               </tr>

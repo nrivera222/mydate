@@ -25,20 +25,20 @@ export default async function Events({ searchParams }: { searchParams: SP }) {
           const locked = rank < tierById(e.min_tier).rank;
           const left = e.capacity - e.sold;
           return (
-            <Link key={e.id} href={`/eventos/${e.id}`} className={`card flex flex-col gap-3 transition hover:border-gold/60 ${locked ? "opacity-70" : ""}`}>
+            <Link key={e.id} href={`/eventos/${e.id}`} className={`card flex flex-col gap-3 transition hover:border-brand/60 ${locked ? "opacity-70" : ""}`}>
               <div className="flex items-start justify-between">
                 <span className="text-4xl">{e.emoji}</span>
                 <TierBadge tier={e.min_tier} />
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wider text-gold-2">{e.starts_at.slice(0, 16).replace(" ", " · ")}</div>
+                <div className="text-xs uppercase tracking-wider text-glow">{e.starts_at.slice(0, 16).replace(" ", " · ")}</div>
                 <div className="mt-1 font-display text-xl">{t(e.title)}</div>
                 <div className="text-sm text-muted">{t(e.venue)}, {t(e.city)}</div>
               </div>
               <p className="line-clamp-3 text-sm text-muted">{t(e.description)}</p>
               <div className="mt-auto flex items-center justify-between pt-2 text-sm">
-                <span className="text-gold-2">{e.price ? money(e.price) : t("Invitación")}</span>
-                {mine.has(e.id) ? <span className="chip-gold">{t("✓ Tienes entrada")}</span> : left <= 0 ? <span className="chip">{t("Agotado")}</span> : locked ? <span className="chip">🔒 {tierById(e.min_tier).name}</span> : <span className="chip">{t("{n} plazas", { n: left })}</span>}
+                <span className="text-glow">{e.price ? money(e.price) : t("Invitación")}</span>
+                {mine.has(e.id) ? <span className="chip-brand">{t("✓ Tienes entrada")}</span> : left <= 0 ? <span className="chip">{t("Agotado")}</span> : locked ? <span className="chip">🔒 {tierById(e.min_tier).name}</span> : <span className="chip">{t("{n} plazas", { n: left })}</span>}
               </div>
             </Link>
           );

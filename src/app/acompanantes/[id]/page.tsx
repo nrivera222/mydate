@@ -36,9 +36,9 @@ export default async function CompanionDetail({ params, searchParams }: { params
         </div>
         <div className="space-y-6 lg:col-span-3">
           <div>
-            <div className="flex gap-2"><span className="chip-gold">{t("Acompañamiento social")}</span><TierBadge tier={p.tier} /></div>
+            <div className="flex gap-2"><span className="chip-brand">{t("Acompañamiento social")}</span><TierBadge tier={p.tier} /></div>
             <h1 className="h1 mt-3">{p.name}{age(p) ? `, ${age(p)}` : ""}</h1>
-            <p className="text-gold-2">{offer.headline}</p>
+            <p className="text-glow">{offer.headline}</p>
             <p className="text-sm text-muted">{t(p.city)} · {t(archetypeLabel(p.archetype))} · {csv(p.languages).map((l) => t(l)).join(", ")}</p>
             <div className="mt-2"><Stars value={rating.avg} count={rating.n} /></div>
           </div>
@@ -55,7 +55,7 @@ export default async function CompanionDetail({ params, searchParams }: { params
                   return (
                     <tr key={u.id}>
                       <td>{t(u.per)}</td>
-                      <td className="text-gold-2">{money(offer[`rate_${u.id}`]!)}</td>
+                      <td className="text-glow">{money(offer[`rate_${u.id}`]!)}</td>
                       <td className="text-muted">{money(quote.total)} <span className="text-xs">{t("(incl. tarifa {fee} + IVA)", { fee: pct(tier.serviceFee) })}</span></td>
                     </tr>
                   );
@@ -65,7 +65,7 @@ export default async function CompanionDetail({ params, searchParams }: { params
           </div>
 
           {p.user_id !== user.id && (
-            <form action={bookCompanion} className="card space-y-4 border-gold/40">
+            <form action={bookCompanion} className="card space-y-4 border-brand/40">
               <h2 className="h2">{t("Solicitar reserva")}</h2>
               <input type="hidden" name="provider" value={p.user_id} />
               <div className="grid gap-3 md:grid-cols-3">
@@ -93,8 +93,8 @@ export default async function CompanionDetail({ params, searchParams }: { params
               <ul className="list-disc space-y-1 ps-5 text-xs text-muted">{COMPANION_RULES.map((r) => <li key={r}>{r}</li>)}</ul>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="check" name="rules" required />{" "}{t("Acepto el código de acompañamiento social")}</label>
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <span className="text-sm text-muted">{t("Saldo disponible:")}{" "}<span className="text-gold-2">{money(wallet.balance)}</span></span>
-                <button className="btn-gold" type="submit">{t("Solicitar y poner en custodia")}</button>
+                <span className="text-sm text-muted">{t("Saldo disponible:")}{" "}<span className="text-glow">{money(wallet.balance)}</span></span>
+                <button className="btn-brand" type="submit">{t("Solicitar y poner en custodia")}</button>
               </div>
             </form>
           )}

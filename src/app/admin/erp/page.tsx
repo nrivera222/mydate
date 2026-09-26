@@ -58,7 +58,7 @@ export default async function Erp({ searchParams }: { searchParams: SP }) {
   return (
     <div>
       <PageHeader title={t("ERP")} subtitle={t("Finanzas, pedidos de regalos, inventario, cuentas por pagar, alianzas, Salas y suscripciones.")}>
-        <div className="flex gap-1">{[30, 90, 365].map((d) => <a key={d} href={`/admin/erp?days=${d}`} className={d === days ? "chip-gold" : "chip"}>{t("{n} días", { n: d })}</a>)}</div>
+        <div className="flex gap-1">{[30, 90, 365].map((d) => <a key={d} href={`/admin/erp?days=${d}`} className={d === days ? "chip-brand" : "chip"}>{t("{n} días", { n: d })}</a>)}</div>
       </PageHeader>
       <Flash ok={sp(q.ok)} error={sp(q.error)} />
 
@@ -77,9 +77,9 @@ export default async function Erp({ searchParams }: { searchParams: SP }) {
             <thead><tr><th>{t("Línea")}</th><th className="text-end">{t("Operaciones")}</th><th className="text-end">{t("Ingreso neto")}</th><th className="text-end">{t("IVA")}</th><th className="text-end">{t("% total")}</th></tr></thead>
             <tbody>
               {pnl.map((r) => (
-                <tr key={r.stream}><td>{t(STREAM_LABEL[r.stream] ?? r.stream)}</td><td className="text-end">{r.n}</td><td className="text-end tabular-nums text-gold-2">{money(r.amount)}</td><td className="text-end tabular-nums text-muted">{money(r.vat)}</td><td className="text-end">{pct(r.amount / Math.max(1, totalRev))}</td></tr>
+                <tr key={r.stream}><td>{t(STREAM_LABEL[r.stream] ?? r.stream)}</td><td className="text-end">{r.n}</td><td className="text-end tabular-nums text-glow">{money(r.amount)}</td><td className="text-end tabular-nums text-muted">{money(r.vat)}</td><td className="text-end">{pct(r.amount / Math.max(1, totalRev))}</td></tr>
               ))}
-              <tr className="font-medium"><td>{t("Total")}</td><td /><td className="text-end text-gold-2">{money(totalRev)}</td><td className="text-end">{money(totalVat)}</td><td className="text-end">100%</td></tr>
+              <tr className="font-medium"><td>{t("Total")}</td><td /><td className="text-end text-glow">{money(totalRev)}</td><td className="text-end">{money(totalVat)}</td><td className="text-end">100%</td></tr>
             </tbody>
           </table>
         </section>
@@ -91,7 +91,7 @@ export default async function Erp({ searchParams }: { searchParams: SP }) {
           <div className="grid grid-cols-3 gap-3 text-sm">
             <div><div className="label">{t("Reservas acompañamiento")}</div><div className="text-xl">{companion.n}</div></div>
             <div><div className="label">{t("GMV acompañamiento")}</div><div className="text-xl">{compact(companion.gmv)}</div></div>
-            <div><div className="label">{t("Take rate")}</div><div className="text-xl text-gold-2">{pct(companion.fee / Math.max(1, companion.gmv))}</div></div>
+            <div><div className="label">{t("Take rate")}</div><div className="text-xl text-glow">{pct(companion.fee / Math.max(1, companion.gmv))}</div></div>
           </div>
         </section>
       </div>
@@ -166,7 +166,7 @@ export default async function Erp({ searchParams }: { searchParams: SP }) {
           <h2 className="h2 mb-3">{t("Salas TWO LOVE ({n} días)", { n: days })}</h2>
           <table className="tbl">
             <thead><tr><th>{t("Sala")}</th><th className="text-end">{t("Reservas")}</th><th className="text-end">{t("Horas")}</th><th className="text-end">{t("Ingresos")}</th></tr></thead>
-            <tbody>{lounges.map((l) => <tr key={l.id}><td>{l.name}<div className="text-xs text-muted">{t(l.city)}</div></td><td className="text-end">{l.bookings}</td><td className="text-end">{l.hours}</td><td className="text-end tabular-nums text-gold-2">{money(l.revenue)}</td></tr>)}</tbody>
+            <tbody>{lounges.map((l) => <tr key={l.id}><td>{l.name}<div className="text-xs text-muted">{t(l.city)}</div></td><td className="text-end">{l.bookings}</td><td className="text-end">{l.hours}</td><td className="text-end tabular-nums text-glow">{money(l.revenue)}</td></tr>)}</tbody>
           </table>
         </section>
         <section className="card overflow-x-auto">
@@ -176,7 +176,7 @@ export default async function Erp({ searchParams }: { searchParams: SP }) {
             <tbody>
               {TIERS.filter((x) => x.monthly).map((x) => {
                 const s = subs.find((y) => y.tier === x.id);
-                return <tr key={x.id}><td>{x.name}</td><td className="text-end">{s?.n ?? 0}</td><td className="text-end tabular-nums text-gold-2">{money(s?.mrr ?? 0)}</td></tr>;
+                return <tr key={x.id}><td>{x.name}</td><td className="text-end">{s?.n ?? 0}</td><td className="text-end tabular-nums text-glow">{money(s?.mrr ?? 0)}</td></tr>;
               })}
             </tbody>
           </table>
@@ -212,7 +212,7 @@ export default async function Erp({ searchParams }: { searchParams: SP }) {
           <input className="input" name="discount" type="number" min={0} max={90} placeholder={t("% descuento")} />
           <input className="input" name="commission" type="number" min={0} max={90} placeholder={t("% comisión TL")} />
           <select className="input" name="min_tier">{TIERS.map((x) => <option key={x.id} value={x.id}>{x.name}+</option>)}</select>
-          <button className="btn-gold md:col-span-3">{t("Añadir aliado")}</button>
+          <button className="btn-brand md:col-span-3">{t("Añadir aliado")}</button>
         </form>
       </section>
     </div>

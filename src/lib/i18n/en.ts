@@ -1126,5 +1126,6 @@ const en: Record<string, string> = {
   "💬 Mensaje": "💬 Message",
   "🔒 Por tu seguridad, no compartas teléfonos ni datos bancarios. Todos los pagos se hacen dentro de TWO LOVE.": "🔒 For your safety, don't share phone numbers or bank details. All payments are made within TWO LOVE.",
   "🛡️ Check-in de seguridad": "🛡️ Safety check-in",
+  "Logotipo animado de TWO LOVE": "Animated TWO LOVE logo",
 };
 export default en;

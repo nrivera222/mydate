@@ -42,7 +42,7 @@ export default async function Companions({ searchParams }: { searchParams: SP })
       <Flash ok={sp(q.ok)} error={sp(q.error)} />
 
       <details className="card mb-6 text-sm">
-        <summary className="cursor-pointer text-gold-2">{t("Código de acompañamiento social")}</summary>
+        <summary className="cursor-pointer text-glow">{t("Código de acompañamiento social")}</summary>
         <ul className="mt-3 list-disc space-y-1 ps-5 text-muted">{COMPANION_RULES.map((r) => <li key={r}>{r}</li>)}</ul>
       </details>
 
@@ -60,17 +60,17 @@ export default async function Companions({ searchParams }: { searchParams: SP })
           {COMPANION_ACTIVITIES.map((a) => <option key={a} value={a}>{t(a)}</option>)}
         </select>
         <input name="max" type="number" min={0} defaultValue={max || ""} placeholder={t("Máx. AED/hora")} className="input" />
-        <button className="btn-gold" type="submit">{t("Filtrar")}</button>
+        <button className="btn-brand" type="submit">{t("Filtrar")}</button>
       </form>
 
       {rows.length === 0 && <Empty>{t("No hay acompañantes disponibles con estos filtros.")}</Empty>}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {rows.map((r) => (
-          <Link key={r.user_id} href={`/acompanantes/${r.user_id}`} className="card overflow-hidden p-0 transition hover:border-gold/60">
+          <Link key={r.user_id} href={`/acompanantes/${r.user_id}`} className="card overflow-hidden p-0 transition hover:border-brand/60">
             <div className="aspect-[4/3]"><Portrait name={r.name} hue={r.hue} photo={r.photo_path} /></div>
             <div className="space-y-2 p-5">
               <div className="font-display text-xl">{r.name.split(" ")[0]}{age(r) ? `, ${age(r)}` : ""}</div>
-              <div className="text-sm text-gold-2">{r.headline}</div>
+              <div className="text-sm text-glow">{r.headline}</div>
               <div className="text-sm text-muted">{t(r.city)} · {t(archetypeLabel(r.archetype))} · {csv(r.languages).slice(0, 3).map((l) => t(l)).join(", ")}</div>
               <Stars value={r.avg} count={r.n} />
               <div className="flex flex-wrap gap-1.5 pt-1">

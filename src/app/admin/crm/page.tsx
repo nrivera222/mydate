@@ -20,7 +20,7 @@ function stage(r: Row, verified: boolean) {
   if (r.status !== "active") return ["Suspendido", "chip border-rose/40 text-rose"] as const;
   if (!verified) return ["Lead · verificando", "chip border-sky-300/40 text-sky-200"] as const;
   if (inactiveDays > 14) return ["En riesgo", "chip border-rose/40 text-rose"] as const;
-  if (tierById(r.tier).rank >= 3) return ["VIP", "chip-gold"] as const;
+  if (tierById(r.tier).rank >= 3) return ["VIP", "chip-brand"] as const;
   if (tierById(r.tier).rank >= 1) return ["Suscriptor", "chip border-ok/40 text-ok"] as const;
   return ["Verificado · free", "chip"] as const;
 }
@@ -68,7 +68,7 @@ export default async function Crm({ searchParams }: { searchParams: SP }) {
         </div>
         <div className="card">
           <div className="label">{t("LTV medio")}</div>
-          <div className="font-display text-2xl text-gold-2">{money(rows.reduce((a, r) => a + r.ltv, 0) / Math.max(1, rows.length))}</div>
+          <div className="font-display text-2xl text-glow">{money(rows.reduce((a, r) => a + r.ltv, 0) / Math.max(1, rows.length))}</div>
         </div>
       </div>
 
@@ -82,7 +82,7 @@ export default async function Crm({ searchParams }: { searchParams: SP }) {
           <option value="">{t("Todas las etapas")}</option>
           {stages.map((s) => <option key={s} value={s}>{t(s)}</option>)}
         </select>
-        <button className="btn-gold">{t("Filtrar")}</button>
+        <button className="btn-brand">{t("Filtrar")}</button>
       </form>
 
       <section className="card overflow-x-auto">
@@ -91,11 +91,11 @@ export default async function Crm({ searchParams }: { searchParams: SP }) {
           <tbody>
             {filtered.map((r) => (
               <tr key={r.id}>
-                <td><Link href={`/admin/crm/${r.id}`} className="hover:text-gold-2">{r.name}</Link><div className="text-xs text-muted">{r.email}</div></td>
+                <td><Link href={`/admin/crm/${r.id}`} className="hover:text-glow">{r.name}</Link><div className="text-xs text-muted">{r.email}</div></td>
                 <td><span className={r.stage[1]}>{t(r.stage[0])}</span></td>
                 <td><TierBadge tier={r.tier} /></td>
                 <td className="text-muted">{t(r.city)} · {t(archetypeLabel(r.archetype))}</td>
-                <td className="text-end tabular-nums text-gold-2">{money(r.ltv)}</td>
+                <td className="text-end tabular-nums text-glow">{money(r.ltv)}</td>
                 <td className="text-end tabular-nums">{money(r.spend)}</td>
                 <td className="text-end tabular-nums text-muted">{money(r.balance)}</td>
                 <td className="whitespace-nowrap text-muted">{r.last_active_at.slice(0, 10)}</td>
@@ -112,7 +112,7 @@ export default async function Crm({ searchParams }: { searchParams: SP }) {
             {concierge.map((c) => (
               <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-line/60 pb-3 text-sm last:border-0">
                 <div>
-                  <Link href={`/admin/crm/${c.user_id}`} className="font-medium hover:text-gold-2">{c.name}</Link> <TierBadge tier={c.tier} />
+                  <Link href={`/admin/crm/${c.user_id}`} className="font-medium hover:text-glow">{c.name}</Link> <TierBadge tier={c.tier} />
                   <p className="text-muted">{c.body}</p>
                 </div>
                 <form action={updateConcierge} className="flex gap-2">

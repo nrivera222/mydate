@@ -27,8 +27,8 @@ export default async function EditProfile({ searchParams }: { searchParams: SP }
       </PageHeader>
       <Flash ok={sp(q.ok)} error={sp(q.error)} />
       {!v.complete && (
-        <div className="card mb-6 border-gold/40">
-          <p className="text-sm">{t("Te faltan {n} verificaciones para aparecer en TWO LOVE.", { n: v.total - v.approved })} <Link href="/verificacion" className="text-gold-2 underline">{t("Completar verificación →")}</Link></p>
+        <div className="card mb-6 border-brand/40">
+          <p className="text-sm">{t("Te faltan {n} verificaciones para aparecer en TWO LOVE.", { n: v.total - v.approved })} <Link href="/verificacion" className="text-glow underline">{t("Completar verificación →")}</Link></p>
         </div>
       )}
 
@@ -94,7 +94,7 @@ export default async function EditProfile({ searchParams }: { searchParams: SP }
             <legend className="label">{t("Intereses (máx. 10)")}</legend>
             <div className="flex flex-wrap gap-2">
               {INTERESTS.map((i) => (
-                <label key={i} className="chip cursor-pointer has-[:checked]:border-gold has-[:checked]:text-gold-2">
+                <label key={i} className="chip cursor-pointer has-[:checked]:border-brand has-[:checked]:text-glow">
                   <input type="checkbox" className="sr-only" name="interests" value={i} defaultChecked={interests.includes(i)} /> {t(i)}
                 </label>
               ))}
@@ -138,7 +138,7 @@ export default async function EditProfile({ searchParams }: { searchParams: SP }
             {t("Modo incógnito")} {!tier.incognito && <span className="chip">{t("Platinum+")}</span>}
           </label>
           <p className="text-xs text-muted">{t("En modo incógnito solo te ven las personas a las que das like.")}</p>
-          <button className="btn-gold w-full" type="submit">{t("Guardar perfil")}</button>
+          <button className="btn-brand w-full" type="submit">{t("Guardar perfil")}</button>
         </section>
       </form>
 
@@ -169,7 +169,7 @@ export default async function EditProfile({ searchParams }: { searchParams: SP }
           <legend className="label">{t("Actividades")}</legend>
           <div className="flex flex-wrap gap-2">
             {COMPANION_ACTIVITIES.map((a) => (
-              <label key={a} className="chip cursor-pointer has-[:checked]:border-gold has-[:checked]:text-gold-2">
+              <label key={a} className="chip cursor-pointer has-[:checked]:border-brand has-[:checked]:text-glow">
                 <input type="checkbox" className="sr-only" name="activities" value={a} defaultChecked={activities.includes(a)} /> {t(a)}
               </label>
             ))}
@@ -181,7 +181,7 @@ export default async function EditProfile({ searchParams }: { searchParams: SP }
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" className="check" name="rules" />{" "}{t("Acepto el código de acompañamiento social")}
         </label>
-        <button className="btn-gold" type="submit">{t("Guardar oferta")}</button>
+        <button className="btn-brand" type="submit">{t("Guardar oferta")}</button>
       </form>
     </div>
   );

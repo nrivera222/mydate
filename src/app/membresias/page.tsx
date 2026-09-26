@@ -30,29 +30,29 @@ export default async function Memberships({ searchParams }: { searchParams: SP }
       <PageHeader title={t("Membresías")} subtitle={t("Del acceso esencial al lujo absoluto. Precios con IVA incluido; el plan anual equivale a 10 meses.")} />
       <Flash ok={sp(q.ok)} error={sp(q.error)} />
       <div className="card mb-8 text-sm">
-        {t("Tu plan actual:")}{" "}<span className="text-gold-2">{current.name}</span>
+        {t("Tu plan actual:")}{" "}<span className="text-glow">{current.name}</span>
         {sub && <span className="text-muted"> · {t(sub.period === "yearly" ? "anual, renueva el {date}" : "mensual, renueva el {date}", { date: sub.expires_at.slice(0, 10) })}</span>}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {TIERS.map((x) => (
-          <div key={x.id} className={`card flex flex-col gap-4 ${x.id === current.id ? "border-gold" : ""} ${x.id === "royal" ? "bg-gradient-to-b from-gold/15 to-ink-2" : ""}`}>
+          <div key={x.id} className={`card flex flex-col gap-4 ${x.id === current.id ? "border-brand" : ""} ${x.id === "royal" ? "bg-gradient-to-b from-brand/15 to-ink-2" : ""}`}>
             <div>
               <div className="font-display text-2xl">{x.name}</div>
-              <div className="mt-1 text-gold-2">{x.monthly ? t("{price}/mes", { price: money(x.monthly) }) : t("Gratis")}</div>
+              <div className="mt-1 text-glow">{x.monthly ? t("{price}/mes", { price: money(x.monthly) }) : t("Gratis")}</div>
               {x.yearly > 0 && <div className="text-xs text-muted">{t("o {price}/año", { price: money(x.yearly) })}</div>}
             </div>
             <p className="text-sm text-muted">{t(x.tagline)}</p>
             <ul className="space-y-1.5 text-sm">{x.benefits.map((b) => <li key={b}>✦ {t(b)}</li>)}</ul>
             <div className="mt-auto space-y-2">
               {x.id === current.id ? (
-                <div className="chip-gold w-full justify-center py-2">{t("Plan actual")}</div>
+                <div className="chip-brand w-full justify-center py-2">{t("Plan actual")}</div>
               ) : x.monthly > 0 && x.rank > current.rank ? (
                 (["monthly", "yearly"] as const).map((period) => (
                   <form key={period} action={subscribe}>
                     <input type="hidden" name="tier" value={x.id} />
                     <input type="hidden" name="period" value={period} />
-                    <button className={`${period === "monthly" ? "btn-gold" : "btn-ghost"} w-full`} type="submit">
+                    <button className={`${period === "monthly" ? "btn-brand" : "btn-ghost"} w-full`} type="submit">
                       {period === "monthly" ? t("Mensual") : t("Anual (-17%)")}
                     </button>
                   </form>

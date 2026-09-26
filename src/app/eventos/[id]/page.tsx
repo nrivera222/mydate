@@ -38,7 +38,7 @@ export default async function EventDetail({ params, searchParams }: { params: Pr
         <div>
           <div className="flex gap-2"><TierBadge tier={e.min_tier} />{e.status !== "publicado" && <span className="chip border-rose/40 text-rose">{t("Cancelado")}</span>}</div>
           <h1 className="h1 mt-3">{t(e.title)}</h1>
-          <p className="text-gold-2">{e.starts_at.slice(0, 16).replace(" ", " · ")}</p>
+          <p className="text-glow">{e.starts_at.slice(0, 16).replace(" ", " · ")}</p>
           <p className="text-muted">{t(e.venue)}, {t(e.city)}{e.partner ? ` · con ${e.partner}` : ""}</p>
         </div>
         <p className="leading-relaxed">{t(e.description)}</p>
@@ -61,24 +61,24 @@ export default async function EventDetail({ params, searchParams }: { params: Pr
       </div>
       <aside className="lg:col-span-2">
         <div className="card sticky top-32 space-y-4">
-          <div className="font-display text-3xl text-gold-2">{e.price ? money(net) : t("Sin coste")}</div>
+          <div className="font-display text-3xl text-glow">{e.price ? money(net) : t("Sin coste")}</div>
           {e.price > 0 && <p className="text-xs text-muted">{t("+ IVA {vat}%", { vat: VAT_RATE * 100 })}{tier.giftDiscount ? ` · ${t("incluye tu descuento {tier} de {pct}", { tier: tier.name, pct: pct(tier.giftDiscount) })}` : ""}</p>}
           <div className="text-sm text-muted">{t("{left} de {total} plazas disponibles", { left: Math.max(0, e.capacity - e.sold), total: e.capacity })}</div>
-          <div className="h-2 rounded-full bg-ink-3"><div className="h-2 rounded-full bg-gold" style={{ width: `${Math.min(100, (e.sold / e.capacity) * 100)}%` }} /></div>
+          <div className="h-2 rounded-full bg-ink-3"><div className="h-2 rounded-full bg-brand" style={{ width: `${Math.min(100, (e.sold / e.capacity) * 100)}%` }} /></div>
           {ticket ? (
-            <div className="rounded-xl border border-gold/40 p-4 text-center">
+            <div className="rounded-xl border border-brand/40 p-4 text-center">
               <div className="text-xs uppercase tracking-wider text-muted">{t("Tu entrada")}</div>
-              <div className="mt-1 font-mono text-2xl tracking-widest text-gold-2">TL-{e.id}-{ticket.id.toString().padStart(4, "0")}</div>
+              <div className="mt-1 font-mono text-2xl tracking-widest text-glow">TL-{e.id}-{ticket.id.toString().padStart(4, "0")}</div>
               <div className="mt-1 text-xs text-muted">{t("Muéstrala junto con tu documento en la entrada.")}</div>
             </div>
           ) : past || e.status !== "publicado" ? (
             <p className="text-sm text-muted">{t("Este evento ya no admite reservas.")}</p>
           ) : locked ? (
-            <Link href="/membresias" className="btn-gold w-full">{t("Requiere {tier}", { tier: tierById(e.min_tier).name })}</Link>
+            <Link href="/membresias" className="btn-brand w-full">{t("Requiere {tier}", { tier: tierById(e.min_tier).name })}</Link>
           ) : (
             <form action={buyTicket} className="space-y-2">
               <input type="hidden" name="event" value={e.id} />
-              <button className="btn-gold w-full" type="submit" disabled={e.sold >= e.capacity}>{e.sold >= e.capacity ? t("Agotado") : t("Reservar mi plaza")}</button>
+              <button className="btn-brand w-full" type="submit" disabled={e.sold >= e.capacity}>{e.sold >= e.capacity ? t("Agotado") : t("Reservar mi plaza")}</button>
               <p className="text-center text-xs text-muted">{t("Saldo: {amount}", { amount: money(walletBalance(user.id).balance) })}</p>
             </form>
           )}

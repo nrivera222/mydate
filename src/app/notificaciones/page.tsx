@@ -31,11 +31,11 @@ export default async function Notifications() {
               <form action={openNotification}>
                 <input type="hidden" name="id" value={n.id} />
                 <button type="submit" className={`flex w-full items-start gap-4 p-4 text-start hover:bg-ink-3 ${n.read_at ? "opacity-60" : ""}`}>
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gold/40 text-gold-2">{NOTIFICATION_ICON[n.kind] ?? "✦"}</span>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-brand/40 text-glow">{NOTIFICATION_ICON[n.kind] ?? "✦"}</span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
                       <span className="font-medium">{t.msg(n.title)}</span>
-                      {!n.read_at && <span className="h-2 w-2 rounded-full bg-gold" aria-label={t("sin leer")} />}
+                      {!n.read_at && <span className="h-2 w-2 rounded-full bg-brand" aria-label={t("sin leer")} />}
                     </span>
                     {n.body && <span className="block truncate text-sm text-muted">{t.msg(n.body)}</span>}
                   </span>

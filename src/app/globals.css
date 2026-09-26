@@ -1,40 +1,45 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink: #0b0a09;
-  --color-ink-2: #15130f;
-  --color-ink-3: #1f1c17;
-  --color-line: #2e2a22;
-  --color-gold: #c9a24b;
-  --color-gold-2: #e6c77a;
-  --color-ivory: #f5efe3;
-  --color-muted: #a39c8e;
-  --color-rose: #d9687a;
+  /* Identidad "Pulse Sphere": espacio profundo + neón púrpura y azul eléctrico (manual de marca) */
+  --color-ink: #05040f;
+  --color-ink-2: #0b0a1f;
+  --color-ink-3: #16132f;
+  --color-line: #25213f;
+  --color-brand: #a78bfa;
+  --color-glow: #c4b5fd;
+  --color-electric: #38bdf8;
+  --color-neon: #c026d3;
+  --color-magenta: #e879f9;
+  --color-ivory: #f5f3ff;
+  --color-muted: #a5a3c8;
+  --color-rose: #f472b6;
   --color-ok: #6fbf8e;
-  --font-display: "Playfair Display", Georgia, serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-arabic: "Noto Kufi Arabic", "Inter", system-ui, sans-serif;
+  --font-display: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-brand: "Syncopate", "Montserrat", sans-serif;
+  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-arabic: "Noto Kufi Arabic", "Montserrat", system-ui, sans-serif;
 }
 
 html { color-scheme: dark; }
 body {
-  background: var(--color-ink);
+  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(76, 29, 149, 0.25), transparent 70%) no-repeat, var(--color-ink);
   color: var(--color-ivory);
   font-family: var(--font-sans);
 }
 
 @utility card { @apply rounded-2xl border border-line bg-ink-2 p-5; }
 @utility btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition disabled:opacity-50; }
-@utility btn-gold { @apply btn bg-gold text-ink hover:bg-gold-2; }
-@utility btn-ghost { @apply btn border border-line text-ivory hover:border-gold hover:text-gold-2; }
+@utility btn-brand { @apply btn bg-linear-to-r from-electric via-[#6366f1] to-neon font-semibold text-white shadow-[0_0_24px_rgba(139,92,246,.45)] hover:shadow-[0_0_36px_rgba(139,92,246,.7)] hover:brightness-110; }
+@utility btn-ghost { @apply btn border border-line text-ivory hover:border-brand hover:text-glow; }
 @utility btn-danger { @apply btn border border-rose/50 text-rose hover:bg-rose/10; }
-@utility input { @apply w-full rounded-xl border border-line bg-ink px-3 py-2.5 text-sm text-ivory placeholder:text-muted/60 focus:border-gold focus:outline-none; }
+@utility input { @apply w-full rounded-xl border border-line bg-ink px-3 py-2.5 text-sm text-ivory placeholder:text-muted/60 focus:border-brand focus:outline-none; }
 @utility label { @apply mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted; }
 @utility chip { @apply inline-flex items-center gap-1 rounded-full border border-line px-2.5 py-0.5 text-xs text-muted; }
-@utility chip-gold { @apply chip border-gold/40 text-gold-2; }
-@utility h1 { @apply font-display text-3xl text-ivory md:text-4xl; }
-@utility h2 { @apply font-display text-xl text-ivory; }
-@utility check { @apply accent-[#c9a24b]; }
+@utility chip-brand { @apply chip border-brand/40 text-glow; }
+@utility h1 { @apply font-display text-3xl font-semibold tracking-tight text-ivory md:text-4xl; }
+@utility h2 { @apply font-display text-xl font-semibold text-ivory; }
+@utility check { @apply accent-[#8b5cf6]; }
 
 @layer components {
   .tbl { @apply w-full text-start text-sm; }
@@ -42,8 +47,8 @@ body {
   .tbl td { @apply border-b border-line/60 py-2.5 pe-4 align-top; }
 }
 
-.gold-text {
-  background: linear-gradient(120deg, #e6c77a, #c9a24b 40%, #f5efe3 60%, #c9a24b);
+.brand-text {
+  background: linear-gradient(90deg, #38bdf8, #6366f1 35%, #a855f7 70%, #e879f9);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -53,3 +58,6 @@ body {
 html[dir="rtl"] body { font-family: var(--font-arabic); }
 html[dir="rtl"] .font-display:not(.brand) { font-family: var(--font-arabic); }
 html[dir="rtl"] [class*="tracking-"]:not(.brand) { letter-spacing: 0; }
+
+/* Titulares en Montserrat Semibold con tracking ligeramente negativo (manual de marca) */
+.font-display { font-weight: 600; letter-spacing: -0.01em; }

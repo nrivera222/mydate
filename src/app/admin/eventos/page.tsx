@@ -27,12 +27,12 @@ export default async function AdminEvents({ searchParams }: { searchParams: SP }
           <tbody>
             {events.map((e) => (
               <tr key={e.id}>
-                <td><Link href={`/eventos/${e.id}`} className="hover:text-gold-2">{e.emoji} {t(e.title)}</Link><div className="text-xs text-muted">{t(e.venue)}, {t(e.city)}</div></td>
+                <td><Link href={`/eventos/${e.id}`} className="hover:text-glow">{e.emoji} {t(e.title)}</Link><div className="text-xs text-muted">{t(e.venue)}, {t(e.city)}</div></td>
                 <td className="whitespace-nowrap text-muted">{e.starts_at.slice(0, 16)}</td>
                 <td><TierBadge tier={e.min_tier} /></td>
                 <td className="text-end tabular-nums">{money(e.price)}</td>
                 <td className="text-end">{e.sold}/{e.capacity}</td>
-                <td className="text-end tabular-nums text-gold-2">{money(e.revenue)}</td>
+                <td className="text-end tabular-nums text-glow">{money(e.revenue)}</td>
                 <td>
                   {e.status === "publicado" ? (
                     <form action={cancelEvent}><input type="hidden" name="id" value={e.id} /><button className="btn-danger px-3 py-1">{t("Cancelar")}</button></form>
@@ -55,7 +55,7 @@ export default async function AdminEvents({ searchParams }: { searchParams: SP }
         <input className="input" name="capacity" type="number" min={2} placeholder={t("Aforo")} required />
         <input className="input" name="price" type="number" min={0} placeholder={t("Precio AED (sin IVA)")} required />
         <textarea className="input md:col-span-4" name="description" placeholder={t("Descripción")} maxLength={1000} />
-        <button className="btn-gold md:col-span-4">{t("Publicar evento")}</button>
+        <button className="btn-brand md:col-span-4">{t("Publicar evento")}</button>
       </form>
     </div>
   );

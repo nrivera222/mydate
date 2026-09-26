@@ -1126,5 +1126,6 @@ const ar: Record<string, string> = {
   "💬 Mensaje": "💬 رسالة",
   "🔒 Por tu seguridad, no compartas teléfonos ni datos bancarios. Todos los pagos se hacen dentro de TWO LOVE.": "🔒 حفاظاً على سلامتك، لا تشارك أرقام الهاتف أو البيانات المصرفية. جميع المدفوعات تتم داخل TWO LOVE.",
   "🛡️ Check-in de seguridad": "🛡️ تسجيل وصول آمن",
+  "Logotipo animado de TWO LOVE": "شعار TWO LOVE المتحرك",
 };
 export default ar;

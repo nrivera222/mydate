@@ -9,7 +9,7 @@ import { Avatar, Flash, PageHeader, sp, type SP } from "@/components/ui";
 import { getT } from "@/lib/i18n";
 
 const STATUS: Record<string, [string, string]> = {
-  approved: ["Aprobado", "chip-gold"],
+  approved: ["Aprobado", "chip-brand"],
   pending: ["En revisión", "chip border-sky-300/40 text-sky-200"],
   rejected: ["Rechazado", "chip border-rose/40 text-rose"],
 };
@@ -44,9 +44,9 @@ export default async function VerificationPage({ searchParams }: { searchParams:
       <div className="card mb-8">
         <div className="flex items-center justify-between text-sm">
           <span>{t("Progreso")}</span>
-          <span className="text-gold-2">{v.approved}/{v.total}</span>
+          <span className="text-glow">{v.approved}/{v.total}</span>
         </div>
-        <div className="mt-2 h-2 rounded-full bg-ink-3"><div className="h-2 rounded-full bg-gold" style={{ width: `${(v.approved / v.total) * 100}%` }} /></div>
+        <div className="mt-2 h-2 rounded-full bg-ink-3"><div className="h-2 rounded-full bg-brand" style={{ width: `${(v.approved / v.total) * 100}%` }} /></div>
         <div className="mt-4 flex flex-wrap gap-2">
           {VERIFICATION_TYPES.map((x) => <span key={x.id} className="flex items-center gap-2 text-xs text-muted">{t(x.label)} {badge(x.id)}</span>)}
         </div>
@@ -104,7 +104,7 @@ export default async function VerificationPage({ searchParams }: { searchParams:
               {Object.entries(traits).map(([k, val]) => (
                 <div key={k}>
                   <div className="text-xs text-muted">{t(TRAIT_LABELS[k] ?? k)}</div>
-                  <div className="mt-1 h-1.5 rounded-full bg-ink-3"><div className="h-1.5 rounded-full bg-gold" style={{ width: `${val * 100}%` }} /></div>
+                  <div className="mt-1 h-1.5 rounded-full bg-ink-3"><div className="h-1.5 rounded-full bg-brand" style={{ width: `${val * 100}%` }} /></div>
                 </div>
               ))}
             </div>
@@ -170,8 +170,8 @@ export default async function VerificationPage({ searchParams }: { searchParams:
         <section className="card space-y-4">
           <div className="flex items-center justify-between"><h2 className="h2">{t("5 · Seguro de vida")}</h2>{badge("insurance")}</div>
           {policy ? (
-            <div className="rounded-xl border border-gold/30 p-4 text-sm">
-              <div className="text-gold-2">{t(INSURANCE_PLANS.find((x) => x.id === policy.plan)?.label ?? policy.plan)}</div>
+            <div className="rounded-xl border border-brand/30 p-4 text-sm">
+              <div className="text-glow">{t(INSURANCE_PLANS.find((x) => x.id === policy.plan)?.label ?? policy.plan)}</div>
               <div className="mt-1 text-muted">{t("Cobertura {c} · Prima {p}/mes · Beneficiario: {b}", { c: money(policy.coverage), p: money(policy.premium), b: policy.beneficiary })}</div>
             </div>
           ) : (
@@ -180,9 +180,9 @@ export default async function VerificationPage({ searchParams }: { searchParams:
           <form action={subscribeInsurance} className="space-y-3">
             <div className="grid gap-2">
               {INSURANCE_PLANS.map((pl) => (
-                <label key={pl.id} className="flex items-center justify-between rounded-xl border border-line p-3 text-sm has-[:checked]:border-gold">
+                <label key={pl.id} className="flex items-center justify-between rounded-xl border border-line p-3 text-sm has-[:checked]:border-brand">
                   <span className="flex items-center gap-2"><input type="radio" className="check" name="plan" value={pl.id} defaultChecked={pl.id === "premium"} /> {t(pl.label)}</span>
-                  <span className="text-muted">{t("Cobertura {c}", { c: money(pl.coverage) })} · <span className="text-gold-2">{t("{price}/mes", { price: money(pl.premium) })}</span></span>
+                  <span className="text-muted">{t("Cobertura {c}", { c: money(pl.coverage) })} · <span className="text-glow">{t("{price}/mes", { price: money(pl.premium) })}</span></span>
                 </label>
               ))}
             </div>
@@ -193,7 +193,7 @@ export default async function VerificationPage({ searchParams }: { searchParams:
             <label className="flex items-start gap-2 text-sm text-muted">
               <input type="checkbox" className="check mt-1" name="accept" />{" "}{t("Acepto las condiciones generales y particulares de la póliza de vida.")}
             </label>
-            <button className="btn-gold" type="submit">{policy ? t("Cambiar póliza") : t("Contratar seguro")}</button>
+            <button className="btn-brand" type="submit">{policy ? t("Cambiar póliza") : t("Contratar seguro")}</button>
           </form>
         </section>
       </div>

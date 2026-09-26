@@ -34,7 +34,7 @@ export default async function Customer360({ params, searchParams }: { params: Pr
 
   return (
     <div>
-      <Link href="/admin/crm" className="text-sm text-muted hover:text-gold-2">{t("← CRM")}</Link>
+      <Link href="/admin/crm" className="text-sm text-muted hover:text-glow">{t("← CRM")}</Link>
       <Flash ok={sp(q.ok)} error={sp(q.error)} />
       <div className="mt-4 flex flex-wrap items-center gap-4">
         <Avatar name={p.name} hue={p.hue} photo={p.photo_path} size={72} />
@@ -46,7 +46,7 @@ export default async function Customer360({ params, searchParams }: { params: Pr
         <form action={setUserStatus}>
           <input type="hidden" name="user" value={p.user_id} />
           <input type="hidden" name="status" value={status.status === "active" ? "suspended" : "active"} />
-          <button className={status.status === "active" ? "btn-danger" : "btn-gold"}>{status.status === "active" ? t("Suspender") : t("Reactivar")}</button>
+          <button className={status.status === "active" ? "btn-danger" : "btn-brand"}>{status.status === "active" ? t("Suspender") : t("Reactivar")}</button>
         </form>
       </div>
 
@@ -64,11 +64,11 @@ export default async function Customer360({ params, searchParams }: { params: Pr
             <input type="hidden" name="user" value={p.user_id} />
             <select name="kind" className="input md:w-40"><option value="nota">{t("Nota")}</option><option value="llamada">{t("Llamada")}</option><option value="concierge">{t("Concierge")}</option><option value="incidencia">{t("Incidencia")}</option></select>
             <input name="body" className="input flex-1" placeholder={t("Añadir nota…")} required />
-            <button className="btn-gold">{t("Añadir")}</button>
+            <button className="btn-brand">{t("Añadir")}</button>
           </form>
           <ul className="space-y-3">
             {notes.map((n) => (
-              <li key={n.id} className="border-s-2 border-gold/50 ps-3 text-sm">
+              <li key={n.id} className="border-s-2 border-brand/50 ps-3 text-sm">
                 <div className="text-xs text-muted">{n.created_at.slice(0, 16)} · {t(n.kind)} · {n.author}</div>
                 <p>{n.body}</p>
               </li>

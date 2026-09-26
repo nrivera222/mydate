@@ -21,14 +21,14 @@ export default async function Lounges({ searchParams }: { searchParams: SP }) {
       <PageHeader title={t("Salas TWO LOVE")} subtitle={t("Recintos de la marca para citas: privacidad, protocolo de seguridad, anfitrión dedicado y experiencias de lujo en las ciudades más exclusivas del mundo.")} />
       <Flash ok={sp(q.ok)} error={sp(q.error)} />
       <div className="mb-6 flex flex-wrap gap-2">
-        <Link href="/salas" className={!city ? "chip-gold" : "chip"}>{t("Todas")}</Link>
-        {cities.map((c) => <Link key={c} href={`/salas?city=${encodeURIComponent(c)}`} className={city === c ? "chip-gold" : "chip"}>{c}</Link>)}
+        <Link href="/salas" className={!city ? "chip-brand" : "chip"}>{t("Todas")}</Link>
+        {cities.map((c) => <Link key={c} href={`/salas?city=${encodeURIComponent(c)}`} className={city === c ? "chip-brand" : "chip"}>{c}</Link>)}
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {lounges.filter((l) => !city || l.city === city).map((l) => {
           const locked = rank < tierById(l.min_tier).rank;
           return (
-            <Link key={l.id} href={`/salas/${l.id}`} className={`card flex flex-col gap-3 transition hover:border-gold/60 ${locked ? "opacity-70" : ""}`}>
+            <Link key={l.id} href={`/salas/${l.id}`} className={`card flex flex-col gap-3 transition hover:border-brand/60 ${locked ? "opacity-70" : ""}`}>
               <div className="flex items-start justify-between">
                 <span className="text-4xl">{KIND_ICON[l.kind] ?? "✨"}</span>
                 <TierBadge tier={l.min_tier} />
@@ -39,8 +39,8 @@ export default async function Lounges({ searchParams }: { searchParams: SP }) {
               </div>
               <p className="text-sm text-muted">{t(l.description)}</p>
               <div className="mt-auto flex items-center justify-between pt-2">
-                <span className="text-gold-2">{t("{price}/hora", { price: money(l.price_hour) })}</span>
-                {locked ? <span className="chip">🔒 Requiere {tierById(l.min_tier).name}</span> : <span className="chip-gold">{t("Disponible")}</span>}
+                <span className="text-glow">{t("{price}/hora", { price: money(l.price_hour) })}</span>
+                {locked ? <span className="chip">🔒 Requiere {tierById(l.min_tier).name}</span> : <span className="chip-brand">{t("Disponible")}</span>}
               </div>
             </Link>
           );

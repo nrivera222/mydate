@@ -101,6 +101,7 @@ export function mountPulseLogo(canvas: HTMLCanvasElement, opts: PulseLogoOptions
   ];
 
   let w = 0, h = 0, dpr = 1, raf = 0;
+  let io: IntersectionObserver | null = null;
   const resize = () => {
     dpr = still ? window.devicePixelRatio || 1 : Math.min(window.devicePixelRatio || 1, 2);
     w = canvas.clientWidth;
@@ -379,12 +380,19 @@ export function mountPulseLogo(canvas: HTMLCanvasElement, opts: PulseLogoOptions
     draw(still ? time : INTRO + 0.4);
     canvas.dataset.ready = "1";
   } else {
-    const start = performance.now();
+    // Reloj que solo avanza mientras el lienzo es visible (la intro no se pierde fuera de pantalla)
+    let clock = intro ? 0 : time, last = performance.now(), visible = true;
     const loop = (now: number) => {
-      draw((now - start) / 1000 + (intro ? 0 : time));
+      if (visible) {
+        clock += Math.min(0.1, (now - last) / 1000);
+        draw(clock);
+      }
+      last = now;
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
+    io = new IntersectionObserver(([entry]) => (visible = entry.isIntersecting));
+    io.observe(canvas);
   }
   return {
     draw,
@@ -392,6 +400,7 @@ export function mountPulseLogo(canvas: HTMLCanvasElement, opts: PulseLogoOptions
     destroy: () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      io?.disconnect();
     },
   };
 }

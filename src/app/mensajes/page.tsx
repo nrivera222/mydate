@@ -42,7 +42,7 @@ export default async function Inbox({ searchParams }: { searchParams: SP }) {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{c.name}</span>
-                    <span className={c.via === "match" ? "chip-gold" : "chip"}>{c.via === "match" ? t("Match") : t("Reserva")}</span>
+                    <span className={c.via === "match" ? "chip-brand" : "chip"}>{c.via === "match" ? t("Match") : t("Reserva")}</span>
                   </div>
                   <p className="truncate text-sm text-muted">{c.last_body ?? t("Nuevo match — ¡saluda!")}</p>
                 </div>

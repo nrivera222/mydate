@@ -59,11 +59,11 @@ export default async function LoungeDetail({ params, searchParams }: { params: P
       </div>
       <aside className="lg:col-span-2">
         <div className="card sticky top-32 space-y-4">
-          <div className="font-display text-3xl text-gold-2">{money(l.price_hour)}<span className="text-base text-muted"> {t("/hora + IVA {vat}%", { vat: VAT_RATE * 100 })}</span></div>
+          <div className="font-display text-3xl text-glow">{money(l.price_hour)}<span className="text-base text-muted"> {t("/hora + IVA {vat}%", { vat: VAT_RATE * 100 })}</span></div>
           {locked ? (
             <div className="space-y-3">
               <p className="text-sm text-muted">{t("Esta sala está reservada para miembros {tier} o superior.", { tier: tierById(l.min_tier).name })}</p>
-              <Link href="/membresias" className="btn-gold w-full">{t("Mejorar membresía")}</Link>
+              <Link href="/membresias" className="btn-brand w-full">{t("Mejorar membresía")}</Link>
             </div>
           ) : (
             <form action={bookLounge} className="space-y-3">
@@ -88,7 +88,7 @@ export default async function LoungeDetail({ params, searchParams }: { params: P
                 <textarea className="input" id="notes" name="notes" maxLength={500} placeholder={t("Alergias, flores, música…")} />
               </div>
               <p className="text-xs text-muted">{t("Saldo: {amount}. Se cobra al confirmar.", { amount: money(walletBalance(user.id).balance) })}</p>
-              <button className="btn-gold w-full" type="submit">{t("Reservar Sala")}</button>
+              <button className="btn-brand w-full" type="submit">{t("Reservar Sala")}</button>
             </form>
           )}
         </div>

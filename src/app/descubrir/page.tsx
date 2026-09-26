@@ -38,21 +38,21 @@ export default async function Discover({ searchParams }: { searchParams: SP }) {
 
       {!profileReady && <div className="mb-6"><Empty href="/perfil/editar" cta={t("Completar perfil")}>{t("Completa tu género, preferencias y ciudad para ver perfiles compatibles.")}</Empty></div>}
       {profileReady && !verified && (
-        <div className="card mb-6 border-gold/40 text-sm">{t("Puedes explorar, pero necesitas las 5 verificaciones para dar like, enviar regalos o reservar.")}{" "}<Link href="/verificacion" className="text-gold-2 underline">{t("Verificarme →")}</Link></div>
+        <div className="card mb-6 border-brand/40 text-sm">{t("Puedes explorar, pero necesitas las 5 verificaciones para dar like, enviar regalos o reservar.")}{" "}<Link href="/verificacion" className="text-glow underline">{t("Verificarme →")}</Link></div>
       )}
 
       {likers.length > 0 && (
         <section className="card mb-8">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="h2">{t("Les gustas ({n})", { n: likers.length })}</h2>
-            {!tier.seeLikes && <Link href="/membresias" className="chip-gold">{t("Desbloquear con Gold")}</Link>}
+            {!tier.seeLikes && <Link href="/membresias" className="chip-brand">{t("Desbloquear con Gold")}</Link>}
           </div>
           <div className="flex gap-4 overflow-x-auto pb-1">
             {likers.map((l) => (
               <Link key={l.id} href={tier.seeLikes ? `/perfil/${l.id}` : "/membresias"} className="flex w-20 shrink-0 flex-col items-center gap-1 text-center text-xs">
                 <Avatar name={l.name} hue={l.hue} photo={l.photo_path} size={60} blur={!tier.seeLikes} />
                 <span className={tier.seeLikes ? "" : "blur-sm"}>{l.name.split(" ")[0]}</span>
-                {l.kind === "super" && <span className="text-gold-2">{t("★ Super")}</span>}
+                {l.kind === "super" && <span className="text-glow">{t("★ Super")}</span>}
               </Link>
             ))}
           </div>
@@ -80,7 +80,7 @@ export default async function Discover({ searchParams }: { searchParams: SP }) {
           <option value="">{t("Compatibilidad mínima")}</option>
           {[50, 60, 70, 80].map((n) => <option key={n} value={n}>{n}%+</option>)}
         </select>
-        <button className="btn-gold" type="submit">{t("Filtrar")}</button>
+        <button className="btn-brand" type="submit">{t("Filtrar")}</button>
       </form>
 
       {profileReady && candidates.length === 0 && <Empty>{t("No hay más perfiles con estos filtros. Amplía tu rango o vuelve pronto.")}</Empty>}
@@ -91,25 +91,25 @@ export default async function Discover({ searchParams }: { searchParams: SP }) {
             <Link href={`/perfil/${c.user_id}`} className="relative block aspect-[4/3]">
               <Portrait name={c.name} hue={c.hue} photo={c.photo_path} />
               <div className="absolute start-3 top-3 flex gap-2">
-                <span className="chip-gold bg-ink/80">{t("{n}% compatible", { n: c.score })}</span>
+                <span className="chip-brand bg-ink/80">{t("{n}% compatible", { n: c.score })}</span>
               </div>
               <div className="absolute end-3 top-3"><TierBadge tier={c.tier} /></div>
             </Link>
             <div className="space-y-3 p-5">
               <div>
-                <Link href={`/perfil/${c.user_id}`} className="font-display text-xl hover:text-gold-2">{c.name.split(" ")[0]}{age(c) ? `, ${age(c)}` : ""}</Link>
+                <Link href={`/perfil/${c.user_id}`} className="font-display text-xl hover:text-glow">{c.name.split(" ")[0]}{age(c) ? `, ${age(c)}` : ""}</Link>
                 <div className="text-sm text-muted">{t(archetypeLabel(c.archetype))} · {t(c.city)}</div>
                 <div className="text-sm text-muted">{c.occupation}</div>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {csv(c.interests).slice(0, 4).map((i) => <span key={i} className={csv(me.interests).includes(i) ? "chip-gold" : "chip"}>{t(i)}</span>)}
+                {csv(c.interests).slice(0, 4).map((i) => <span key={i} className={csv(me.interests).includes(i) ? "chip-brand" : "chip"}>{t(i)}</span>)}
               </div>
               <div className="flex gap-2">
                 {(["pass", "like", "super"] as const).map((kind) => (
                   <form key={kind} action={react} className="flex-1">
                     <input type="hidden" name="target" value={c.user_id} />
                     <input type="hidden" name="kind" value={kind} />
-                    <button type="submit" className={`${kind === "like" ? "btn-gold" : "btn-ghost"} w-full px-2`} aria-label={kind}>
+                    <button type="submit" className={`${kind === "like" ? "btn-brand" : "btn-ghost"} w-full px-2`} aria-label={kind}>
                       {kind === "pass" ? t("✕ Pasar") : kind === "like" ? t("♥ Like") : t("★ Super")}
                     </button>
                   </form>
