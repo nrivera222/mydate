@@ -31,6 +31,14 @@ npm run build && npm start
 npm run db:reset        # borra la base; se regenera con datos demo
 ```
 
+## Marca
+
+El símbolo de TWO LOVE es una **“pulse sphere”**: una esfera de latitudes doradas atravesada por un latido que deforma las líneas del ecuador. Se genera de forma procedural en SVG (`src/lib/logo.ts`), así que es nítido a cualquier tamaño; en la web se anima con un destello que recorre el pulso y un halo que late (se desactiva con *reducir movimiento*).
+
+- Componente: `<LogoMark />` y `<Logo />` en `src/components/Logo.tsx`.
+- Archivos: `public/brand/two-love-mark.svg` (fondo oscuro) y `two-love-mark-transparent.svg`; favicon en `src/app/icon.svg`.
+- Regenerar tras cambiar la geometría: `node --experimental-strip-types scripts/generate-icons.mjs`.
+
 ## Idiomas
 
 La interfaz está disponible en **español, inglés y árabe** (con dirección RTL y tipografía árabe). El idioma se elige con el selector ES · EN · ع de la cabecera, se guarda en una cookie y, en la primera visita, se detecta del navegador (`Accept-Language`).

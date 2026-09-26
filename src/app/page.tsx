@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoMark } from "@/components/Logo";
 import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/auth";
 import { all, one } from "@/lib/db";
@@ -20,6 +21,7 @@ export default async function Home() {
   return (
     <div className="space-y-24">
       <section className="relative overflow-hidden rounded-3xl border border-line bg-[radial-gradient(ellipse_at_top_right,rgba(201,162,75,0.25),transparent_60%)] px-6 py-20 md:px-14">
+        <LogoMark size={360} className="pointer-events-none absolute end-10 top-1/2 hidden -translate-y-1/2 lg:block" />
         <p className="chip-gold mb-6">{t("Dubái · Global · Solo por verificación")}</p>
         <h1 className="max-w-3xl font-display text-5xl leading-tight md:text-6xl">
           {t("El amor también merece")}{" "}<span className="gold-text">{t("excelencia")}</span>.

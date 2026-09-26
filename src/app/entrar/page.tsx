@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoMark } from "@/components/Logo";
 import { login } from "../actions/auth";
 import { Flash, sp, type SP } from "@/components/ui";
 import { getT } from "@/lib/i18n";
@@ -8,6 +9,7 @@ export default async function LoginPage({ searchParams }: { searchParams: SP }) 
   const q = await searchParams;
   return (
     <div className="mx-auto max-w-md">
+      <div className="mb-4 flex justify-center"><LogoMark size={88} /></div>
       <h1 className="h1 text-center">{t("Bienvenido/a de nuevo")}</h1>
       <p className="mt-2 text-center text-muted">{t("Accede a tu cuenta TWO LOVE.")}</p>
       <div className="card mt-8">

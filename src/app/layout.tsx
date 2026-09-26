@@ -9,6 +9,7 @@ import { TierBadge } from "@/components/ui";
 import { logout } from "./actions/auth";
 import { getT, LOCALES, LOCALE_NAMES } from "@/lib/i18n";
 import { setLocale } from "./actions/locale";
+import { LogoMark } from "@/components/Logo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
@@ -72,7 +73,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <header className="sticky top-0 z-30 border-b border-line bg-ink/90 backdrop-blur">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
             <Link href={user ? (user.role === "admin" ? "/admin" : "/descubrir") : "/"} className="brand whitespace-nowrap font-display text-xl tracking-[0.15em] md:text-2xl md:tracking-[0.2em]">
-              <span className="gold-text">TWO LOVE</span>
+              <span className="inline-flex items-center gap-2.5" dir="ltr"><LogoMark size={34} /><span className="gold-text">TWO LOVE</span></span>
             </Link>
             {user ? (
               <div className="flex items-center gap-3 text-sm">
@@ -98,7 +99,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <LanguageSwitcher current={t.locale} />
+                <span className="hidden sm:block"><LanguageSwitcher current={t.locale} /></span>
                 <Link href="/entrar" className="btn-ghost px-3 md:px-5">{t("Entrar")}</Link>
                 <Link href="/registro" className="btn-gold whitespace-nowrap px-3 md:px-5">{t("Unirme")}</Link>
               </div>
@@ -121,7 +122,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <footer className="mt-16 border-t border-line">
           <div className="mx-auto grid max-w-7xl gap-6 px-4 py-10 text-sm text-muted md:grid-cols-4">
             <div>
-              <div className="brand font-display text-lg tracking-[0.2em] text-gold">TWO LOVE</div>
+              <div className="brand flex items-center gap-2.5 font-display text-lg tracking-[0.2em] text-gold" dir="ltr"><LogoMark size={28} animated={false} />TWO LOVE</div>
               <div className="mt-3"><LanguageSwitcher current={t.locale} /></div>
               <p className="mt-2">{t("Citas verificadas para personas de alto perfil. Dubái · Abu Dabi · Doha · Riad · Mónaco · Londres.")}</p>
             </div>

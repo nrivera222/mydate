@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoMark } from "@/components/Logo";
 import { register } from "../actions/auth";
 import { Flash, sp, type SP } from "@/components/ui";
 import { getT } from "@/lib/i18n";
@@ -9,6 +10,7 @@ export default async function RegisterPage({ searchParams }: { searchParams: SP 
   const ref = (sp(q.ref) ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
   return (
     <div className="mx-auto max-w-md">
+      <div className="mb-4 flex justify-center"><LogoMark size={88} /></div>
       <h1 className="h1 text-center">{t("Solicitar acceso")}</h1>
       <p className="mt-2 text-center text-muted">{t("Crea tu cuenta y completa las 5 verificaciones para activar tu perfil.")}</p>
       <div className="card mt-8">
