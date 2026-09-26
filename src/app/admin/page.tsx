@@ -5,8 +5,10 @@ import { fullyVerifiedIds } from "@/lib/discovery";
 import { archetypeLabel, STREAM_LABEL, TIERS } from "@/lib/catalog";
 import { compact, money } from "@/lib/money";
 import { Bars, Columns, PageHeader, Stat } from "@/components/ui";
+import { getT } from "@/lib/i18n";
 
 export default async function AdminHome() {
+  const t = await getT();
   await requireAdmin();
   const members = one<{ n: number }>("SELECT COUNT(*) AS n FROM users WHERE role = 'user'")!.n;
   const verified = fullyVerifiedIds().size;
@@ -31,43 +33,43 @@ export default async function AdminHome() {
 
   return (
     <div>
-      <PageHeader title="Panel TWO LOVE" subtitle="Visión general del negocio: crecimiento, ingresos, seguridad y operaciones." />
+      <PageHeader title={t("Panel TWO LOVE")} subtitle={t("Visión general del negocio: crecimiento, ingresos, seguridad y operaciones.")} />
       <div className="grid gap-4 md:grid-cols-4">
-        <Stat label="Miembros" value={members} hint={`${verified} con verificación completa (${Math.round((verified / Math.max(1, members)) * 100)}%)`} />
-        <Stat label="MRR suscripciones" value={money(mrr)} hint="Ingreso mensual recurrente" />
-        <Stat label="Ingresos netos 30 días" value={money(rev30)} hint={`GMV 30 días: ${compact(gmv30)}`} />
-        <Stat label="Activos 7 días" value={active7} hint={`${matches} matches totales`} />
+        <Stat label={t("Miembros")} value={members} hint={t("{n} con verificación completa ({pct}%)", { n: verified, pct: Math.round((verified / Math.max(1, members)) * 100) })} />
+        <Stat label={t("MRR suscripciones")} value={money(mrr)} hint={t("Ingreso mensual recurrente")} />
+        <Stat label={t("Ingresos netos 30 días")} value={money(rev30)} hint={t("GMV 30 días: {v}", { v: compact(gmv30) })} />
+        <Stat label={t("Activos 7 días")} value={active7} hint={t("{n} matches totales", { n: matches })} />
       </div>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <Link href="/admin/verificaciones" className="card flex items-center justify-between hover:border-gold/60">
-          <span>Verificaciones pendientes</span><span className="font-display text-3xl text-gold-2">{pendingVer}</span>
+          <span>{t("Verificaciones pendientes")}</span><span className="font-display text-3xl text-gold-2">{pendingVer}</span>
         </Link>
         <Link href="/admin/seguridad" className="card flex items-center justify-between hover:border-gold/60">
-          <span>Denuncias abiertas</span><span className={`font-display text-3xl ${openReports ? "text-rose" : "text-ok"}`}>{openReports}</span>
+          <span>{t("Denuncias abiertas")}</span><span className={`font-display text-3xl ${openReports ? "text-rose" : "text-ok"}`}>{openReports}</span>
         </Link>
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <section className="card">
-          <h2 className="h2 mb-4">Ingresos por mes</h2>
+          <h2 className="h2 mb-4">{t("Ingresos por mes")}</h2>
           <Columns rows={monthly.map((r) => ({ label: r.m.slice(5), value: r.v }))} format={compact} />
         </section>
         <section className="card">
-          <h2 className="h2 mb-4">Ingresos por línea (180 días)</h2>
-          <Bars rows={byStream.map((r) => ({ label: STREAM_LABEL[r.stream] ?? r.stream, value: r.v }))} format={money} />
+          <h2 className="h2 mb-4">{t("Ingresos por línea (180 días)")}</h2>
+          <Bars rows={byStream.map((r) => ({ label: t(STREAM_LABEL[r.stream] ?? r.stream), value: r.v }))} format={money} />
         </section>
         <section className="card">
-          <h2 className="h2 mb-4">Miembros por membresía</h2>
-          <Bars rows={TIERS.map((t) => ({ label: t.name, value: byTier.find((b) => b.tier === t.id)?.n ?? 0 }))} format={String} />
+          <h2 className="h2 mb-4">{t("Miembros por membresía")}</h2>
+          <Bars rows={TIERS.map((x) => ({ label: x.name, value: byTier.find((b) => b.tier === x.id)?.n ?? 0 }))} format={String} />
         </section>
         <section className="card">
-          <h2 className="h2 mb-4">Top ciudades</h2>
-          <Bars rows={byCity.map((c) => ({ label: c.city, value: c.n }))} format={String} />
+          <h2 className="h2 mb-4">{t("Top ciudades")}</h2>
+          <Bars rows={byCity.map((c) => ({ label: t(c.city), value: c.n }))} format={String} />
         </section>
         <section className="card lg:col-span-2">
-          <h2 className="h2 mb-4">Prototipos</h2>
+          <h2 className="h2 mb-4">{t("Prototipos")}</h2>
           <div className="grid gap-x-8 md:grid-cols-2">
-            <Bars rows={byArchetype.map((a) => ({ label: archetypeLabel(a.archetype), value: a.n }))} format={String} />
+            <Bars rows={byArchetype.map((a) => ({ label: t(archetypeLabel(a.archetype)), value: a.n }))} format={String} />
           </div>
         </section>
       </div>

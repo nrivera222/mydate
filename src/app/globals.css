@@ -13,6 +13,7 @@
   --color-ok: #6fbf8e;
   --font-display: "Playfair Display", Georgia, serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-arabic: "Noto Kufi Arabic", "Inter", system-ui, sans-serif;
 }
 
 html { color-scheme: dark; }
@@ -36,9 +37,9 @@ body {
 @utility check { @apply accent-[#c9a24b]; }
 
 @layer components {
-  .tbl { @apply w-full text-left text-sm; }
-  .tbl th { @apply border-b border-line py-2 pr-4 text-xs font-medium uppercase tracking-wider text-muted; }
-  .tbl td { @apply border-b border-line/60 py-2.5 pr-4 align-top; }
+  .tbl { @apply w-full text-start text-sm; }
+  .tbl th { @apply border-b border-line py-2 pe-4 text-xs font-medium uppercase tracking-wider text-muted; }
+  .tbl td { @apply border-b border-line/60 py-2.5 pe-4 align-top; }
 }
 
 .gold-text {
@@ -47,3 +48,8 @@ body {
   background-clip: text;
   color: transparent;
 }
+
+/* Árabe (RTL): tipografía propia y sin espaciado entre letras, que rompe la unión de caracteres */
+html[dir="rtl"] body { font-family: var(--font-arabic); }
+html[dir="rtl"] .font-display:not(.brand) { font-family: var(--font-arabic); }
+html[dir="rtl"] [class*="tracking-"]:not(.brand) { letter-spacing: 0; }

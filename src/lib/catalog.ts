@@ -138,11 +138,11 @@ export const CITIES = [
 
 // Citas de acompañamiento social ("citas falsas"): se alquilan por unidad de tiempo.
 export const RATE_UNITS = [
-  { id: "hour", label: "Hora", plural: "horas", maxQty: 12 },
-  { id: "day", label: "Día", plural: "días", maxQty: 14 },
-  { id: "week", label: "Semana", plural: "semanas", maxQty: 8 },
-  { id: "month", label: "Mes", plural: "meses", maxQty: 12 },
-  { id: "year", label: "Año", plural: "años", maxQty: 2 },
+  { id: "hour", label: "Hora", plural: "horas", per: "Por hora", maxQty: 12 },
+  { id: "day", label: "Día", plural: "días", per: "Por día", maxQty: 14 },
+  { id: "week", label: "Semana", plural: "semanas", per: "Por semana", maxQty: 8 },
+  { id: "month", label: "Mes", plural: "meses", per: "Por mes", maxQty: 12 },
+  { id: "year", label: "Año", plural: "años", per: "Por año", maxQty: 2 },
 ] as const;
 export type RateUnit = (typeof RATE_UNITS)[number]["id"];
 

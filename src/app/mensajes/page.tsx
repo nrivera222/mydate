@@ -2,10 +2,12 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
 import { Avatar, Empty, Flash, PageHeader, sp, type SP } from "@/components/ui";
+import { getT } from "@/lib/i18n";
 
 type Conversation = { id: number; name: string; hue: number; photo_path: string | null; last_body: string | null; last_at: string | null; via: string };
 
 export default async function Inbox({ searchParams }: { searchParams: SP }) {
+  const t = await getT();
   const user = await requireUser();
   const q = await searchParams;
   const rows = all<Conversation>(
@@ -27,10 +29,10 @@ export default async function Inbox({ searchParams }: { searchParams: SP }) {
 
   return (
     <div>
-      <PageHeader title="Mensajes" subtitle="Conversaciones con tus matches y con las personas con las que tienes reservas." />
+      <PageHeader title={t("Mensajes")} subtitle={t("Conversaciones con tus matches y con las personas con las que tienes reservas.")} />
       <Flash ok={sp(q.ok)} error={sp(q.error)} />
       {rows.length === 0 ? (
-        <Empty href="/descubrir" cta="Descubrir perfiles">Aún no tienes matches. ¡Da tu primer like!</Empty>
+        <Empty href="/descubrir" cta={t("Descubrir perfiles")}>{t("Aún no tienes matches. ¡Da tu primer like!")}</Empty>
       ) : (
         <ul className="card divide-y divide-line p-0">
           {rows.map((c) => (
@@ -40,9 +42,9 @@ export default async function Inbox({ searchParams }: { searchParams: SP }) {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{c.name}</span>
-                    <span className={c.via === "match" ? "chip-gold" : "chip"}>{c.via === "match" ? "Match" : "Reserva"}</span>
+                    <span className={c.via === "match" ? "chip-gold" : "chip"}>{c.via === "match" ? t("Match") : t("Reserva")}</span>
                   </div>
-                  <p className="truncate text-sm text-muted">{c.last_body ?? "Nuevo match — ¡saluda!"}</p>
+                  <p className="truncate text-sm text-muted">{c.last_body ?? t("Nuevo match — ¡saluda!")}</p>
                 </div>
                 {c.last_at && <span className="text-xs text-muted">{c.last_at.slice(0, 16)}</span>}
               </Link>

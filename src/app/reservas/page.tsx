@@ -5,6 +5,7 @@ import { RATE_UNITS, RATING_TAGS } from "@/lib/catalog";
 import { money } from "@/lib/money";
 import { cancelBooking, completeBooking, disputeBooking, rate, respondBooking, safetyCheckin } from "../actions/commerce";
 import { Empty, Flash, PageHeader, sp, type SP } from "@/components/ui";
+import { getT } from "@/lib/i18n";
 
 type Booking = {
   id: number; kind: string; client_id: number; provider_id: number | null; unit: string; quantity: number; start_at: string; activity: string; notes: string;
@@ -26,6 +27,7 @@ function Hidden({ id }: { id: number }) {
 }
 
 export default async function Bookings({ searchParams }: { searchParams: SP }) {
+  const t = await getT();
   const user = await requireUser();
   const q = await searchParams;
   const rows = all<Booking>(
@@ -37,47 +39,48 @@ export default async function Bookings({ searchParams }: { searchParams: SP }) {
   );
   const unitLabel = (u: string, n: number) => {
     const x = RATE_UNITS.find((r) => r.id === u);
-    return x ? `${n} ${n === 1 ? x.label.toLowerCase() : x.plural}` : `${n} ${u}`;
+    return x ? `${n} ${t(n === 1 ? x.label.toLowerCase() : x.plural)}` : `${n} ${u}`;
   };
 
   return (
     <div>
-      <PageHeader title="Reservas" subtitle="Acompañamiento social y Salas TWO LOVE. Haz check-in de seguridad el día del encuentro." />
+      <PageHeader title={t("Reservas")} subtitle={t("Acompañamiento social y Salas TWO LOVE. Haz check-in de seguridad el día del encuentro.")} />
       <Flash ok={sp(q.ok)} error={sp(q.error)} />
-      {rows.length === 0 && <Empty href="/acompanantes" cta="Explorar acompañamiento">Aún no tienes reservas.</Empty>}
+      {rows.length === 0 && <Empty href="/acompanantes" cta={t("Explorar acompañamiento")}>{t("Aún no tienes reservas.")}</Empty>}
       <div className="space-y-4">
         {rows.map((b) => {
           const asClient = b.client_id === user.id;
           const counterpart = asClient ? b.provider_name : b.client_name;
           const counterpartId = asClient ? b.provider_id : b.client_id;
           const [label, cls] = STATUS[b.status] ?? [b.status, "chip"];
+          const labelT = t(label);
           return (
             <article key={b.id} className="card">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs text-muted">#{b.id}</span>
-                    <span className={cls}>{label}</span>
-                    <span className="chip">{b.kind === "lounge" ? "Sala TWO LOVE" : asClient ? "Contratada por ti" : "Te han contratado"}</span>
+                    <span className={cls}>{labelT}</span>
+                    <span className="chip">{b.kind === "lounge" ? t("Sala TWO LOVE") : asClient ? t("Contratada por ti") : t("Te han contratado")}</span>
                     {b.safety_checkin_at && <span className="chip border-ok/40 text-ok">✓ Check-in {b.safety_checkin_at.slice(11, 16)}</span>}
                   </div>
                   <h2 className="mt-2 font-display text-xl">
-                    {b.kind === "lounge" ? b.lounge_name : b.activity}
+                    {b.kind === "lounge" ? b.lounge_name : t(b.activity)}
                     {counterpart && counterpartId && <> · <Link href={`/perfil/${counterpartId}`} className="text-gold-2">{counterpart}</Link></>}
                   </h2>
                   <p className="text-sm text-muted">{b.start_at.slice(0, 16)} · {unitLabel(b.unit, b.quantity)}</p>
                   {b.notes && <p className="mt-1 text-sm text-muted">“{b.notes}”</p>}
                 </div>
-                <div className="text-right text-sm">
+                <div className="text-end text-sm">
                   {asClient ? (
                     <>
                       <div className="font-display text-2xl text-gold-2">{money(b.total)}</div>
-                      <div className="text-xs text-muted">Tarifa {money(b.subtotal)} · Servicio {money(b.service_fee)} · IVA {money(b.vat)}</div>
+                      <div className="text-xs text-muted">{t("Tarifa {a} · Servicio {b} · IVA {c}", { a: money(b.subtotal), b: money(b.service_fee), c: money(b.vat) })}</div>
                     </>
                   ) : (
                     <>
                       <div className="font-display text-2xl text-gold-2">{money(b.provider_payout)}</div>
-                      <div className="text-xs text-muted">Neto tras comisión TWO LOVE</div>
+                      <div className="text-xs text-muted">{t("Neto tras comisión TWO LOVE")}</div>
                     </>
                   )}
                 </div>
@@ -86,54 +89,54 @@ export default async function Bookings({ searchParams }: { searchParams: SP }) {
               <div className="mt-4 flex flex-wrap gap-2">
                 {b.kind === "companion" && !asClient && b.status === "requested" && (
                   <>
-                    <form action={respondBooking}><Hidden id={b.id} /><input type="hidden" name="decision" value="accept" /><button className="btn-gold">Aceptar</button></form>
-                    <form action={respondBooking}><Hidden id={b.id} /><input type="hidden" name="decision" value="decline" /><button className="btn-ghost">Rechazar</button></form>
+                    <form action={respondBooking}><Hidden id={b.id} /><input type="hidden" name="decision" value="accept" /><button className="btn-gold">{t("Aceptar")}</button></form>
+                    <form action={respondBooking}><Hidden id={b.id} /><input type="hidden" name="decision" value="decline" /><button className="btn-ghost">{t("Rechazar")}</button></form>
                   </>
                 )}
                 {b.kind === "companion" && asClient && b.status === "accepted" && (
-                  <form action={completeBooking}><Hidden id={b.id} /><button className="btn-gold">Confirmar encuentro y liberar pago</button></form>
+                  <form action={completeBooking}><Hidden id={b.id} /><button className="btn-gold">{t("Confirmar encuentro y liberar pago")}</button></form>
                 )}
                 {b.kind === "companion" && asClient && ["requested", "accepted"].includes(b.status) && (
-                  <form action={cancelBooking}><Hidden id={b.id} /><button className="btn-ghost">Cancelar</button></form>
+                  <form action={cancelBooking}><Hidden id={b.id} /><button className="btn-ghost">{t("Cancelar")}</button></form>
                 )}
                 {["accepted"].includes(b.status) && !b.safety_checkin_at && (
-                  <form action={safetyCheckin}><Hidden id={b.id} /><button className="btn-ghost">🛡️ Check-in de seguridad</button></form>
+                  <form action={safetyCheckin}><Hidden id={b.id} /><button className="btn-ghost">{t("🛡️ Check-in de seguridad")}</button></form>
                 )}
                 {b.kind === "companion" && b.status === "accepted" && (
                   <details className="w-full">
-                    <summary className="cursor-pointer text-sm text-rose">Abrir disputa</summary>
+                    <summary className="cursor-pointer text-sm text-rose">{t("Abrir disputa")}</summary>
                     <form action={disputeBooking} className="mt-2 flex gap-2">
                       <Hidden id={b.id} />
-                      <input className="input flex-1" name="details" placeholder="¿Qué ha ocurrido?" required />
-                      <button className="btn-danger">Enviar</button>
+                      <input className="input flex-1" name="details" placeholder={t("¿Qué ha ocurrido?")} required />
+                      <button className="btn-danger">{t("Enviar")}</button>
                     </form>
                   </details>
                 )}
                 {b.kind === "companion" && counterpartId && ["requested", "accepted", "completed"].includes(b.status) && (
-                  <Link href={`/mensajes/${counterpartId}`} className="btn-ghost">💬 Mensaje</Link>
+                  <Link href={`/mensajes/${counterpartId}`} className="btn-ghost">{t("💬 Mensaje")}</Link>
                 )}
               </div>
 
               {b.kind === "companion" && b.status === "completed" && b.provider_id && (
                 b.my_rating ? (
-                  <p className="mt-3 text-sm text-muted">Tu valoración: <span className="text-gold-2">{"★".repeat(b.my_rating)}</span></p>
+                  <p className="mt-3 text-sm text-muted">{t("Tu valoración:")}{" "}<span className="text-gold-2">{"★".repeat(b.my_rating)}</span></p>
                 ) : (
                   <form action={rate} className="mt-4 space-y-3 rounded-xl border border-line p-4">
                     <Hidden id={b.id} />
                     <div className="flex items-center gap-3 text-sm">
-                      <span className="text-muted">Valora a {counterpart}:</span>
+                      <span className="text-muted">{t("Valora a {name}:", { name: counterpart ?? "" })}</span>
                       {[1, 2, 3, 4, 5].map((n) => (
                         <label key={n} className="flex items-center gap-1"><input type="radio" className="check" name="stars" value={n} defaultChecked={n === 5} />{n}★</label>
                       ))}
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {RATING_TAGS.map((t) => (
-                        <label key={t} className="chip cursor-pointer has-[:checked]:border-gold has-[:checked]:text-gold-2"><input type="checkbox" className="sr-only" name="tags" value={t} />{t}</label>
+                      {RATING_TAGS.map((x) => (
+                        <label key={x} className="chip cursor-pointer has-[:checked]:border-gold has-[:checked]:text-gold-2"><input type="checkbox" className="sr-only" name="tags" value={x} />{t(x)}</label>
                       ))}
                     </div>
                     <div className="flex gap-2">
-                      <input className="input flex-1" name="comment" placeholder="Comentario (opcional)" maxLength={500} />
-                      <button className="btn-gold">Valorar</button>
+                      <input className="input flex-1" name="comment" placeholder={t("Comentario (opcional)")} maxLength={500} />
+                      <button className="btn-gold">{t("Valorar")}</button>
                     </div>
                   </form>
                 )

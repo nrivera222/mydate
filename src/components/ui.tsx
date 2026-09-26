@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { tierById, VERIFICATION_TYPES } from "@/lib/catalog";
+import { currentLocale, tr, translateMessage } from "@/lib/i18n";
 
 export function Flash({ ok, error }: { ok?: string; error?: string }) {
   if (!ok && !error) return null;
   return (
     <div role="status" className={`mb-6 rounded-xl border px-4 py-3 text-sm ${error ? "border-rose/40 bg-rose/10 text-rose" : "border-ok/40 bg-ok/10 text-ok"}`}>
-      {error ?? ok}
+      {translateMessage(currentLocale(), (error ?? ok)!)}
     </div>
   );
 }
@@ -65,25 +66,25 @@ export function TierBadge({ tier }: { tier: string }) {
     diamond: "border-sky-300/50 text-sky-200",
     royal: "border-gold bg-gold text-ink",
   };
-  return <span className={`chip ${styles[t.id]}`}>{t.name}</span>;
+  return <span className={`chip ${styles[t.id]}`} dir="ltr">{t.name}</span>;
 }
 
 export function VerifiedBadge({ count }: { count: number }) {
   const full = count === VERIFICATION_TYPES.length;
   return (
-    <span className={full ? "chip-gold" : "chip"} title={`${count}/${VERIFICATION_TYPES.length} verificaciones`}>
-      {full ? "✓ Verificación completa" : `${count}/${VERIFICATION_TYPES.length} verificado`}
+    <span className={full ? "chip-gold" : "chip"} title={tr("{n}/{total} verificaciones", { n: count, total: VERIFICATION_TYPES.length })}>
+      {full ? tr("✓ Verificación completa") : tr("{n}/{total} verificado", { n: count, total: VERIFICATION_TYPES.length })}
     </span>
   );
 }
 
 export function Stars({ value, count }: { value: number | null; count?: number }) {
-  if (!value) return <span className="text-xs text-muted">Sin valoraciones</span>;
+  if (!value) return <span className="text-xs text-muted">{tr("Sin valoraciones")}</span>;
   return (
     <span className="text-sm text-gold-2">
       {"★".repeat(Math.round(value))}
       <span className="text-muted">{"★".repeat(5 - Math.round(value))}</span>
-      <span className="ml-1 text-xs text-muted">{value.toFixed(1)}{count != null && ` (${count})`}</span>
+      <span className="ms-1 text-xs text-muted">{value.toFixed(1)}{count != null && ` (${count})`}</span>
     </span>
   );
 }

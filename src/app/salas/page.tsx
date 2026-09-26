@@ -5,8 +5,10 @@ import { tierById } from "@/lib/catalog";
 import { money } from "@/lib/money";
 import { KIND_ICON, type Lounge } from "@/lib/lounges";
 import { Flash, PageHeader, sp, TierBadge, type SP } from "@/components/ui";
+import { getT } from "@/lib/i18n";
 
 export default async function Lounges({ searchParams }: { searchParams: SP }) {
+  const t = await getT();
   const user = await requireUser();
   const q = await searchParams;
   const city = sp(q.city);
@@ -16,10 +18,10 @@ export default async function Lounges({ searchParams }: { searchParams: SP }) {
 
   return (
     <div>
-      <PageHeader title="Salas TWO LOVE" subtitle="Recintos de la marca para citas: privacidad, protocolo de seguridad, anfitrión dedicado y experiencias de lujo en las ciudades más exclusivas del mundo." />
+      <PageHeader title={t("Salas TWO LOVE")} subtitle={t("Recintos de la marca para citas: privacidad, protocolo de seguridad, anfitrión dedicado y experiencias de lujo en las ciudades más exclusivas del mundo.")} />
       <Flash ok={sp(q.ok)} error={sp(q.error)} />
       <div className="mb-6 flex flex-wrap gap-2">
-        <Link href="/salas" className={!city ? "chip-gold" : "chip"}>Todas</Link>
+        <Link href="/salas" className={!city ? "chip-gold" : "chip"}>{t("Todas")}</Link>
         {cities.map((c) => <Link key={c} href={`/salas?city=${encodeURIComponent(c)}`} className={city === c ? "chip-gold" : "chip"}>{c}</Link>)}
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -33,12 +35,12 @@ export default async function Lounges({ searchParams }: { searchParams: SP }) {
               </div>
               <div>
                 <div className="font-display text-xl">{l.name}</div>
-                <div className="text-sm text-muted">{l.city}, {l.country} · hasta {l.capacity} personas</div>
+                <div className="text-sm text-muted">{t(l.city)}, {t(l.country)} · {t("hasta {n} personas", { n: l.capacity })}</div>
               </div>
-              <p className="text-sm text-muted">{l.description}</p>
+              <p className="text-sm text-muted">{t(l.description)}</p>
               <div className="mt-auto flex items-center justify-between pt-2">
-                <span className="text-gold-2">{money(l.price_hour)}/hora</span>
-                {locked ? <span className="chip">🔒 Requiere {tierById(l.min_tier).name}</span> : <span className="chip-gold">Disponible</span>}
+                <span className="text-gold-2">{t("{price}/hora", { price: money(l.price_hour) })}</span>
+                {locked ? <span className="chip">🔒 Requiere {tierById(l.min_tier).name}</span> : <span className="chip-gold">{t("Disponible")}</span>}
               </div>
             </Link>
           );

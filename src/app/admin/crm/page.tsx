@@ -6,6 +6,7 @@ import { archetypeLabel, TIERS, tierById } from "@/lib/catalog";
 import { money } from "@/lib/money";
 import { updateConcierge } from "../../actions/admin";
 import { Flash, PageHeader, sp, TierBadge, type SP } from "@/components/ui";
+import { getT } from "@/lib/i18n";
 
 type Row = {
   id: number; name: string; email: string; tier: string; status: string; source: string; created_at: string; last_active_at: string;
@@ -25,6 +26,7 @@ function stage(r: Row, verified: boolean) {
 }
 
 export default async function Crm({ searchParams }: { searchParams: SP }) {
+  const t = await getT();
   await requireAdmin();
   const q = await searchParams;
   const search = (sp(q.q) ?? "").toLowerCase();
@@ -52,50 +54,50 @@ export default async function Crm({ searchParams }: { searchParams: SP }) {
 
   return (
     <div>
-      <PageHeader title="CRM" subtitle="Ciclo de vida del miembro, valor (LTV), segmentos, canales de adquisición y solicitudes de concierge." />
+      <PageHeader title={t("CRM")} subtitle={t("Ciclo de vida del miembro, valor (LTV), segmentos, canales de adquisición y solicitudes de concierge.")} />
       <Flash ok={sp(q.ok)} error={sp(q.error)} />
 
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <div className="card">
-          <div className="label">Embudo</div>
-          <div className="flex flex-wrap gap-2">{stages.map((s) => <Link key={s} href={`/admin/crm?stage=${encodeURIComponent(s)}`} className="chip">{s}: {rows.filter((r) => r.stage[0] === s).length}</Link>)}</div>
+          <div className="label">{t("Embudo")}</div>
+          <div className="flex flex-wrap gap-2">{stages.map((s) => <Link key={s} href={`/admin/crm?stage=${encodeURIComponent(s)}`} className="chip">{t(s)}: {rows.filter((r) => r.stage[0] === s).length}</Link>)}</div>
         </div>
         <div className="card">
-          <div className="label">Canales de adquisición</div>
-          <div className="flex flex-wrap gap-2">{sources.map(([s, n]) => <span key={s} className="chip">{s.replace("_", " ")}: {n}</span>)}</div>
+          <div className="label">{t("Canales de adquisición")}</div>
+          <div className="flex flex-wrap gap-2">{sources.map(([s, n]) => <span key={s} className="chip">{t(s)}: {n}</span>)}</div>
         </div>
         <div className="card">
-          <div className="label">LTV medio</div>
+          <div className="label">{t("LTV medio")}</div>
           <div className="font-display text-2xl text-gold-2">{money(rows.reduce((a, r) => a + r.ltv, 0) / Math.max(1, rows.length))}</div>
         </div>
       </div>
 
       <form className="card mb-6 grid gap-3 md:grid-cols-4" method="get">
-        <input className="input" name="q" defaultValue={search} placeholder="Buscar nombre o email" />
+        <input className="input" name="q" defaultValue={search} placeholder={t("Buscar nombre o email")} />
         <select className="input" name="tier" defaultValue={tierFilter ?? ""}>
-          <option value="">Todas las membresías</option>
-          {TIERS.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          <option value="">{t("Todas las membresías")}</option>
+          {TIERS.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
         </select>
         <select className="input" name="stage" defaultValue={stageFilter ?? ""}>
-          <option value="">Todas las etapas</option>
-          {stages.map((s) => <option key={s}>{s}</option>)}
+          <option value="">{t("Todas las etapas")}</option>
+          {stages.map((s) => <option key={s} value={s}>{t(s)}</option>)}
         </select>
-        <button className="btn-gold">Filtrar</button>
+        <button className="btn-gold">{t("Filtrar")}</button>
       </form>
 
       <section className="card overflow-x-auto">
         <table className="tbl">
-          <thead><tr><th>Miembro</th><th>Etapa</th><th>Plan</th><th>Ciudad · prototipo</th><th className="text-right">LTV (neto)</th><th className="text-right">Gasto</th><th className="text-right">Saldo</th><th>Últ. actividad</th></tr></thead>
+          <thead><tr><th>{t("Miembro")}</th><th>{t("Etapa")}</th><th>{t("Plan")}</th><th>{t("Ciudad · prototipo")}</th><th className="text-end">{t("LTV (neto)")}</th><th className="text-end">{t("Gasto")}</th><th className="text-end">{t("Saldo")}</th><th>{t("Últ. actividad")}</th></tr></thead>
           <tbody>
             {filtered.map((r) => (
               <tr key={r.id}>
                 <td><Link href={`/admin/crm/${r.id}`} className="hover:text-gold-2">{r.name}</Link><div className="text-xs text-muted">{r.email}</div></td>
-                <td><span className={r.stage[1]}>{r.stage[0]}</span></td>
+                <td><span className={r.stage[1]}>{t(r.stage[0])}</span></td>
                 <td><TierBadge tier={r.tier} /></td>
-                <td className="text-muted">{r.city} · {archetypeLabel(r.archetype)}</td>
-                <td className="text-right tabular-nums text-gold-2">{money(r.ltv)}</td>
-                <td className="text-right tabular-nums">{money(r.spend)}</td>
-                <td className="text-right tabular-nums text-muted">{money(r.balance)}</td>
+                <td className="text-muted">{t(r.city)} · {t(archetypeLabel(r.archetype))}</td>
+                <td className="text-end tabular-nums text-gold-2">{money(r.ltv)}</td>
+                <td className="text-end tabular-nums">{money(r.spend)}</td>
+                <td className="text-end tabular-nums text-muted">{money(r.balance)}</td>
                 <td className="whitespace-nowrap text-muted">{r.last_active_at.slice(0, 10)}</td>
               </tr>
             ))}
@@ -104,8 +106,8 @@ export default async function Crm({ searchParams }: { searchParams: SP }) {
       </section>
 
       <section id="concierge" className="card mt-8">
-        <h2 className="h2 mb-3">Solicitudes de concierge</h2>
-        {concierge.length === 0 ? <p className="text-sm text-muted">Sin solicitudes.</p> : (
+        <h2 className="h2 mb-3">{t("Solicitudes de concierge")}</h2>
+        {concierge.length === 0 ? <p className="text-sm text-muted">{t("Sin solicitudes.")}</p> : (
           <ul className="space-y-3">
             {concierge.map((c) => (
               <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-line/60 pb-3 text-sm last:border-0">
@@ -116,9 +118,9 @@ export default async function Crm({ searchParams }: { searchParams: SP }) {
                 <form action={updateConcierge} className="flex gap-2">
                   <input type="hidden" name="id" value={c.id} />
                   <select name="status" defaultValue={c.status} className="input w-36">
-                    <option value="nuevo">Nuevo</option><option value="en_curso">En curso</option><option value="resuelto">Resuelto</option>
+                    <option value="nuevo">{t("Nuevo")}</option><option value="en_curso">{t("En curso")}</option><option value="resuelto">{t("Resuelto")}</option>
                   </select>
-                  <button className="btn-ghost">Guardar</button>
+                  <button className="btn-ghost">{t("Guardar")}</button>
                 </form>
               </li>
             ))}

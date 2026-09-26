@@ -31,6 +31,15 @@ npm run build && npm start
 npm run db:reset        # borra la base; se regenera con datos demo
 ```
 
+## Idiomas
+
+La interfaz está disponible en **español, inglés y árabe** (con dirección RTL y tipografía árabe). El idioma se elige con el selector ES · EN · ع de la cabecera, se guarda en una cookie y, en la primera visita, se detecta del navegador (`Accept-Language`).
+
+- Las traducciones viven en `src/lib/i18n/en.ts` y `src/lib/i18n/ar.ts`; la clave es el texto original en español (`t("Guardar perfil")`).
+- Los avisos de las acciones y las notificaciones guardadas se traducen al mostrarse, reconociendo partes variables (`"Recarga de {a} completada."`) y reformateando importes al idioma activo.
+- `npm run i18n:check` verifica que todo texto de la interfaz, del catálogo y del contenido sembrado tiene traducción en ambos idiomas (1.061 claves).
+- El contenido que escribe cada miembro (biografía, ocupación, mensajes) no se traduce.
+
 ## Qué incluye
 
 ### Para miembros
@@ -88,5 +97,5 @@ Esto es un MVP funcional de extremo a extremo. Antes de lanzar en producción:
 - Proveedor KYC automático (p. ej. UAE Pass, Onfido, Sumsub) y detección de vivacidad para la selfie.
 - Los documentos sensibles ya se cifran en reposo con AES-256-GCM (`UPLOAD_ENCRYPTION_KEY`); en producción moverlos a S3/Blob con la clave en un KMS.
 - Migrar de SQLite a PostgreSQL para escalar (el esquema es SQL estándar).
-- Internacionalización (árabe con RTL, inglés, ruso, francés) y app móvil.
+- Más idiomas (ruso, francés, chino) añadiendo un diccionario en `src/lib/i18n/`, y app móvil.
 - Revisión legal local (ver `docs/MODELO_NEGOCIO.md`, sección de cumplimiento).

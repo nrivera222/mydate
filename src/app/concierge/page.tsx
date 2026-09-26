@@ -4,8 +4,10 @@ import { all } from "@/lib/db";
 import { tierById } from "@/lib/catalog";
 import { requestConcierge } from "../actions/commerce";
 import { Flash, PageHeader, sp, type SP } from "@/components/ui";
+import { getT } from "@/lib/i18n";
 
 export default async function Concierge({ searchParams }: { searchParams: SP }) {
+  const t = await getT();
   const user = await requireUser();
   const q = await searchParams;
   const tier = tierById(user.tier);
@@ -15,19 +17,19 @@ export default async function Concierge({ searchParams }: { searchParams: SP }) 
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title="Concierge 24/7" subtitle="Reservas imposibles, regalos a medida, viajes y logística de citas en cualquier ciudad del mundo." />
+      <PageHeader title={t("Concierge 24/7")} subtitle={t("Reservas imposibles, regalos a medida, viajes y logística de citas en cualquier ciudad del mundo.")} />
       <Flash ok={sp(q.ok)} error={sp(q.error)} />
       {tier.concierge ? (
         <form action={requestConcierge} className="card space-y-3">
-          <label className="label" htmlFor="body">¿En qué podemos ayudarte?</label>
-          <textarea className="input min-h-32" id="body" name="body" required maxLength={1000} placeholder="p. ej. Mesa para dos en Mónaco durante el Grand Prix y un ramo de peonías en la mesa." />
-          <button className="btn-gold" type="submit">Enviar al concierge</button>
-          {tier.matchmaker && <p className="text-sm text-gold-2">Como miembro Royal Black, tu matchmaker personal también recibirá esta solicitud.</p>}
+          <label className="label" htmlFor="body">{t("¿En qué podemos ayudarte?")}</label>
+          <textarea className="input min-h-32" id="body" name="body" required maxLength={1000} placeholder={t("p. ej. Mesa para dos en Mónaco durante el Grand Prix y un ramo de peonías en la mesa.")} />
+          <button className="btn-gold" type="submit">{t("Enviar al concierge")}</button>
+          {tier.matchmaker && <p className="text-sm text-gold-2">{t("Como miembro Royal Black, tu matchmaker personal también recibirá esta solicitud.")}</p>}
         </form>
       ) : (
         <div className="card space-y-4 text-center">
-          <p className="text-muted">El concierge 24/7 está incluido en las membresías Diamond y Royal Black.</p>
-          <Link href="/membresias" className="btn-gold">Ver membresías</Link>
+          <p className="text-muted">{t("El concierge 24/7 está incluido en las membresías Diamond y Royal Black.")}</p>
+          <Link href="/membresias" className="btn-gold">{t("Ver membresías")}</Link>
         </div>
       )}
       {requests.length > 0 && (

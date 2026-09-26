@@ -7,11 +7,29 @@ import { one } from "@/lib/db";
 import { money } from "@/lib/money";
 import { TierBadge } from "@/components/ui";
 import { logout } from "./actions/auth";
+import { getT, LOCALES, LOCALE_NAMES } from "@/lib/i18n";
+import { setLocale } from "./actions/locale";
 
-export const metadata: Metadata = {
-  title: "TWO LOVE — Citas de alto perfil",
-  description: "Ecosistema global de citas verificadas para personas de alto perfil: citas reales, acompañamiento social, Salas TWO LOVE y concierge.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return {
+    title: t("TWO LOVE — Citas de alto perfil"),
+    description: t("Ecosistema global de citas verificadas para personas de alto perfil: citas reales, acompañamiento social, Salas TWO LOVE y concierge."),
+  };
+}
+
+function LanguageSwitcher({ current }: { current: string }) {
+  return (
+    <form action={setLocale} className="flex items-center gap-1 text-xs">
+      {LOCALES.map((l) => (
+        <button key={l} name="lang" value={l} type="submit" aria-pressed={l === current} title={LOCALE_NAMES[l]}
+          className={`rounded-full px-2 py-1 ${l === current ? "bg-gold/15 text-gold-2" : "text-muted hover:text-gold-2"}`}>
+          {l === "ar" ? "ع" : l.toUpperCase()}
+        </button>
+      ))}
+    </form>
+  );
+}
 
 const MEMBER_NAV = [
   ["/descubrir", "Descubrir"],
@@ -37,35 +55,37 @@ const ADMIN_NAV = [
 ];
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const t = await getT();
   const user = await currentUser();
   const nav = user?.role === "admin" ? ADMIN_NAV : MEMBER_NAV;
   const wallet = user && user.role !== "admin" ? walletBalance(user.id) : null;
   const unread = user ? one<{ n: number }>("SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND read_at IS NULL", user.id)!.n : 0;
 
   return (
-    <html lang="es">
+    <html lang={t.locale} dir={t.dir}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600&family=Noto+Kufi+Arabic:wght@400;500;600&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-screen">
         <header className="sticky top-0 z-30 border-b border-line bg-ink/90 backdrop-blur">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
-            <Link href={user ? (user.role === "admin" ? "/admin" : "/descubrir") : "/"} className="whitespace-nowrap font-display text-xl tracking-[0.15em] md:text-2xl md:tracking-[0.2em]">
+            <Link href={user ? (user.role === "admin" ? "/admin" : "/descubrir") : "/"} className="brand whitespace-nowrap font-display text-xl tracking-[0.15em] md:text-2xl md:tracking-[0.2em]">
               <span className="gold-text">TWO LOVE</span>
             </Link>
             {user ? (
               <div className="flex items-center gap-3 text-sm">
+                <span className="hidden md:block"><LanguageSwitcher current={t.locale} /></span>
                 {wallet && (
-                  <Link href="/billetera" className="chip-gold hidden sm:inline-flex" title="Saldo de billetera">
+                  <Link href="/billetera" className="chip-gold hidden sm:inline-flex" title={t("Saldo de billetera")}>
                     ◈ {money(wallet.balance)}
                   </Link>
                 )}
-                <Link href="/notificaciones" className="relative text-lg text-muted hover:text-gold-2" aria-label={`Notificaciones (${unread} sin leer)`}>
+                <Link href="/notificaciones" className="relative text-lg text-muted hover:text-gold-2" aria-label={t("Notificaciones ({n} sin leer)", { n: unread })}>
                   🔔
                   {unread > 0 && (
-                    <span className="absolute -right-2 -top-1 min-w-4 rounded-full bg-rose px-1 text-center text-[10px] font-semibold leading-4 text-ink">{unread > 9 ? "9+" : unread}</span>
+                    <span className="absolute -end-2 -top-1 min-w-4 rounded-full bg-rose px-1 text-center text-[10px] font-semibold leading-4 text-ink">{unread > 9 ? "9+" : unread}</span>
                   )}
                 </Link>
                 <TierBadge tier={user.tier} />
@@ -73,13 +93,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <Link href="/perfil/editar" className="text-muted hover:text-gold-2">{user.name.split(" ")[0]}</Link>
                 )}
                 <form action={logout}>
-                  <button className="text-muted hover:text-rose" type="submit">Salir</button>
+                  <button className="text-muted hover:text-rose" type="submit">{t("Salir")}</button>
                 </form>
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Link href="/entrar" className="btn-ghost px-3 md:px-5">Entrar</Link>
-                <Link href="/registro" className="btn-gold whitespace-nowrap px-3 md:px-5">Unirme</Link>
+                <LanguageSwitcher current={t.locale} />
+                <Link href="/entrar" className="btn-ghost px-3 md:px-5">{t("Entrar")}</Link>
+                <Link href="/registro" className="btn-gold whitespace-nowrap px-3 md:px-5">{t("Unirme")}</Link>
               </div>
             )}
           </div>
@@ -87,11 +108,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <nav className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 pb-2 text-sm">
               {nav.map(([href, label]) => (
                 <Link key={href} href={href} className="whitespace-nowrap rounded-full px-3 py-1.5 text-muted hover:bg-ink-3 hover:text-gold-2">
-                  {label}
+                  {t(label)}
                 </Link>
               ))}
               {user.role !== "admin" && (
-                <Link href="/verificacion" className="whitespace-nowrap rounded-full px-3 py-1.5 text-muted hover:bg-ink-3 hover:text-gold-2">Verificación</Link>
+                <Link href="/verificacion" className="whitespace-nowrap rounded-full px-3 py-1.5 text-muted hover:bg-ink-3 hover:text-gold-2">{t("Verificación")}</Link>
               )}
             </nav>
           )}
@@ -100,20 +121,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <footer className="mt-16 border-t border-line">
           <div className="mx-auto grid max-w-7xl gap-6 px-4 py-10 text-sm text-muted md:grid-cols-4">
             <div>
-              <div className="font-display text-lg tracking-[0.2em] text-gold">TWO LOVE</div>
-              <p className="mt-2">Citas verificadas para personas de alto perfil. Dubái · Abu Dabi · Doha · Riad · Mónaco · Londres.</p>
+              <div className="brand font-display text-lg tracking-[0.2em] text-gold">TWO LOVE</div>
+              <div className="mt-3"><LanguageSwitcher current={t.locale} /></div>
+              <p className="mt-2">{t("Citas verificadas para personas de alto perfil. Dubái · Abu Dabi · Doha · Riad · Mónaco · Londres.")}</p>
             </div>
             <div>
-              <div className="mb-2 text-ivory">Seguridad</div>
-              <p>Verificación de identidad, foto, perfil psicológico, médico y seguro de vida. Pagos en custodia.</p>
+              <div className="mb-2 text-ivory">{t("Seguridad")}</div>
+              <p>{t("Verificación de identidad, foto, perfil psicológico, médico y seguro de vida. Pagos en custodia.")}</p>
             </div>
             <div>
-              <div className="mb-2 text-ivory">Código de conducta</div>
-              <p>El acompañamiento social es estrictamente platónico. Tolerancia cero con servicios sexuales, acoso o fraude.</p>
+              <div className="mb-2 text-ivory">{t("Código de conducta")}</div>
+              <p>{t("El acompañamiento social es estrictamente platónico. Tolerancia cero con servicios sexuales, acoso o fraude.")}</p>
             </div>
             <div>
-              <div className="mb-2 text-ivory">Legal</div>
-              <p>Solo mayores de 21 años. Datos sensibles cifrados y tratados conforme a la PDPL de EAU y el RGPD.</p>
+              <div className="mb-2 text-ivory">{t("Legal")}</div>
+              <p>{t("Solo mayores de 21 años. Datos sensibles cifrados y tratados conforme a la PDPL de EAU y el RGPD.")}</p>
             </div>
           </div>
         </footer>

@@ -9,12 +9,14 @@ import { money } from "@/lib/money";
 import { react, report } from "../../actions/social";
 import { sendGift } from "../../actions/commerce";
 import { Flash, Portrait, sp, Stars, TierBadge, VerifiedBadge, type SP } from "@/components/ui";
+import { getT } from "@/lib/i18n";
 
 const BREAKDOWN_LABELS: Record<string, string> = {
   interests: "Intereses", personality: "Personalidad", archetype: "Prototipo", languages: "Idiomas", location: "Ubicación", intent: "Intención",
 };
 
 export default async function ProfilePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: SP }) {
+  const t = await getT();
   const user = await requireUser();
   const { id } = await params;
   const q = await searchParams;
@@ -50,12 +52,12 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                   <input type="hidden" name="target" value={p.user_id} />
                   <input type="hidden" name="kind" value={kind} />
                   <input type="hidden" name="back" value={`/perfil/${p.user_id}`} />
-                  <button className={`${kind === "like" ? "btn-gold" : "btn-ghost"} w-full`} type="submit">{kind === "pass" ? "✕" : kind === "like" ? "♥ Like" : "★ Super"}</button>
+                  <button className={`${kind === "like" ? "btn-gold" : "btn-ghost"} w-full`} type="submit">{kind === "pass" ? "✕" : kind === "like" ? t("♥ Like") : t("★ Super")}</button>
                 </form>
               ))}
             </div>
           )}
-          {matched && <Link href={`/mensajes/${p.user_id}`} className="btn-gold mt-2 w-full">💬 Enviar mensaje</Link>}
+          {matched && <Link href={`/mensajes/${p.user_id}`} className="btn-gold mt-2 w-full">{t("💬 Enviar mensaje")}</Link>}
         </div>
 
         <div className="space-y-6 lg:col-span-3">
@@ -63,34 +65,34 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
             <div className="flex flex-wrap items-center gap-2">
               <TierBadge tier={p.tier} />
               <VerifiedBadge count={v.approved} />
-              {matched && <span className="chip-gold">♥ Match</span>}
+              {matched && <span className="chip-gold">{t("♥ Match")}</span>}
               {received > 0 && <span className="chip">🎁 {received} regalos recibidos</span>}
             </div>
             <h1 className="h1 mt-3">{p.name}{age(p) ? `, ${age(p)}` : ""}</h1>
-            <p className="mt-1 text-muted">{archetypeLabel(p.archetype)} · {p.occupation}</p>
-            <p className="text-sm text-muted">{p.city}, {p.country} · {p.nationality} · {csv(p.languages).join(", ")}</p>
+            <p className="mt-1 text-muted">{t(archetypeLabel(p.archetype))} · {p.occupation}</p>
+            <p className="text-sm text-muted">{t(p.city)}, {t(p.country)} · {p.nationality} · {csv(p.languages).map((l) => t(l)).join(", ")}</p>
             <div className="mt-2"><Stars value={rating.avg} count={rating.n} /></div>
           </div>
 
           <p className="leading-relaxed">{p.bio}</p>
 
           <div className="grid gap-4 sm:grid-cols-3 text-sm">
-            <div className="card"><div className="label">Busca</div>{INTENTS.find((i) => i.id === p.intent)?.label}</div>
-            <div className="card"><div className="label">Interesado/a en</div>{csv(p.seeking).map((s) => GENDERS.find((g) => g.id === s)?.label).join(", ")}</div>
-            <div className="card"><div className="label">Patrimonio</div>{NET_WORTH.find((n) => n.id === p.net_worth)?.label}</div>
+            <div className="card"><div className="label">{t("Busca")}</div>{t(INTENTS.find((i) => i.id === p.intent)?.label ?? "")}</div>
+            <div className="card"><div className="label">{t("Interesado/a en")}</div>{csv(p.seeking).map((s) => t(GENDERS.find((g) => g.id === s)?.label ?? s)).join(", ")}</div>
+            <div className="card"><div className="label">{t("Patrimonio")}</div>{t(NET_WORTH.find((n) => n.id === p.net_worth)?.label ?? "")}</div>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {csv(p.interests).map((i) => <span key={i} className={csv(me.interests).includes(i) ? "chip-gold" : "chip"}>{i}</span>)}
+            {csv(p.interests).map((i) => <span key={i} className={csv(me.interests).includes(i) ? "chip-gold" : "chip"}>{t(i)}</span>)}
           </div>
 
           {!self && (
             <div className="card">
-              <div className="flex items-center justify-between"><h2 className="h2">Compatibilidad</h2><span className="font-display text-3xl text-gold-2">{compat.score}%</span></div>
+              <div className="flex items-center justify-between"><h2 className="h2">{t("Compatibilidad")}</h2><span className="font-display text-3xl text-gold-2">{compat.score}%</span></div>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 {Object.entries(compat.breakdown).map(([k, val]) => (
                   <div key={k}>
-                    <div className="flex justify-between text-xs text-muted"><span>{BREAKDOWN_LABELS[k]}</span><span>{Math.round(val * 100)}%</span></div>
+                    <div className="flex justify-between text-xs text-muted"><span>{t(BREAKDOWN_LABELS[k])}</span><span>{Math.round(val * 100)}%</span></div>
                     <div className="mt-1 h-1.5 rounded-full bg-ink-3"><div className="h-1.5 rounded-full bg-gold" style={{ width: `${val * 100}%` }} /></div>
                   </div>
                 ))}
@@ -99,31 +101,31 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
           )}
 
           <div className="card">
-            <h2 className="h2">Verificaciones</h2>
+            <h2 className="h2">{t("Verificaciones")}</h2>
             <div className="mt-3 flex flex-wrap gap-2">
-              {VERIFICATION_TYPES.map((t) => (
-                <span key={t.id} className={v.map[t.id]?.status === "approved" ? "chip-gold" : "chip"}>{v.map[t.id]?.status === "approved" ? "✓" : "○"} {t.label}</span>
+              {VERIFICATION_TYPES.map((x) => (
+                <span key={x.id} className={v.map[x.id]?.status === "approved" ? "chip-gold" : "chip"}>{v.map[x.id]?.status === "approved" ? "✓" : "○"} {t(x.label)}</span>
               ))}
             </div>
             {Object.keys(traits).length > 0 && (
-              <p className="mt-3 text-xs text-muted">Rasgo dominante: {TRAIT_LABELS[Object.entries(traits).sort((a, b) => b[1] - a[1])[0][0]]}</p>
+              <p className="mt-3 text-xs text-muted">{t("Rasgo dominante:")} {t(TRAIT_LABELS[Object.entries(traits).sort((a, b) => b[1] - a[1])[0][0]])}</p>
             )}
           </div>
 
           {offer && (
             <div className="card flex flex-wrap items-center justify-between gap-3 border-gold/40">
               <div>
-                <div className="chip-gold">Acompañamiento social</div>
+                <div className="chip-gold">{t("Acompañamiento social")}</div>
                 <div className="mt-2 font-display text-lg">{offer.headline}</div>
-                {offer.rate_hour && <div className="text-sm text-muted">Desde {money(offer.rate_hour)}/hora</div>}
+                {offer.rate_hour && <div className="text-sm text-muted">{t("Desde {price}/hora", { price: money(offer.rate_hour) })}</div>}
               </div>
-              {!self && <Link href={`/acompanantes/${p.user_id}`} className="btn-gold">Ver tarifas y reservar</Link>}
+              {!self && <Link href={`/acompanantes/${p.user_id}`} className="btn-gold">{t("Ver tarifas y reservar")}</Link>}
             </div>
           )}
 
           {!self && (
             <form action={sendGift} className="card space-y-3">
-              <h2 className="h2">Enviar un regalo</h2>
+              <h2 className="h2">{t("Enviar un regalo")}</h2>
               <input type="hidden" name="to" value={p.user_id} />
               <input type="hidden" name="back" value={`/perfil/${p.user_id}`} />
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -131,28 +133,28 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                   <label key={g.id} className="cursor-pointer rounded-xl border border-line p-3 text-center text-sm has-[:checked]:border-gold">
                     <input type="radio" name="gift" value={g.id} className="sr-only" required />
                     <div className="text-2xl">{g.emoji}</div>
-                    <div className="mt-1 line-clamp-1">{g.name}</div>
+                    <div className="mt-1 line-clamp-1">{t(g.name)}</div>
                     <div className="text-xs text-gold-2">{money(g.price)}</div>
                   </label>
                 ))}
               </div>
-              <input className="input" name="message" placeholder="Mensaje (opcional)" maxLength={280} />
+              <input className="input" name="message" placeholder={t("Mensaje (opcional)")} maxLength={280} />
               <div className="flex items-center justify-between">
-                <Link href={`/regalos?to=${p.user_id}`} className="text-sm text-gold-2">Ver catálogo completo →</Link>
-                <button className="btn-gold" type="submit">Enviar regalo</button>
+                <Link href={`/regalos?to=${p.user_id}`} className="text-sm text-gold-2">{t("Ver catálogo completo →")}</Link>
+                <button className="btn-gold" type="submit">{t("Enviar regalo")}</button>
               </div>
             </form>
           )}
 
           {reviews.length > 0 && (
             <div className="card">
-              <h2 className="h2">Valoraciones</h2>
+              <h2 className="h2">{t("Valoraciones")}</h2>
               <ul className="mt-3 space-y-3">
                 {reviews.map((r, i) => (
                   <li key={i} className="border-b border-line/60 pb-3 text-sm last:border-0">
                     <Stars value={r.stars} />
                     <p className="mt-1">{r.comment}</p>
-                    <div className="mt-1 flex flex-wrap gap-1">{csv(r.tags).map((t) => <span key={t} className="chip">{t}</span>)}</div>
+                    <div className="mt-1 flex flex-wrap gap-1">{csv(r.tags).map((x) => <span key={x} className="chip">{t(x)}</span>)}</div>
                   </li>
                 ))}
               </ul>
@@ -161,15 +163,15 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
 
           {!self && (
             <details className="card text-sm">
-              <summary className="cursor-pointer text-muted">Denunciar o bloquear</summary>
+              <summary className="cursor-pointer text-muted">{t("Denunciar o bloquear")}</summary>
               <form action={report} className="mt-3 space-y-3">
                 <input type="hidden" name="target" value={p.user_id} />
                 <select name="reason" className="input" required>
-                  {REPORT_REASONS.map((r) => <option key={r}>{r}</option>)}
+                  {REPORT_REASONS.map((r) => <option key={r} value={r}>{t(r)}</option>)}
                 </select>
-                <textarea name="details" className="input" placeholder="Detalles" maxLength={1000} />
-                <label className="flex items-center gap-2"><input type="checkbox" className="check" name="block" /> Bloquear también a este perfil</label>
-                <button className="btn-danger" type="submit">Enviar denuncia</button>
+                <textarea name="details" className="input" placeholder={t("Detalles")} maxLength={1000} />
+                <label className="flex items-center gap-2"><input type="checkbox" className="check" name="block" />{" "}{t("Bloquear también a este perfil")}</label>
+                <button className="btn-danger" type="submit">{t("Enviar denuncia")}</button>
               </form>
             </details>
           )}
