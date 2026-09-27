@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
+import { clpPerAed } from "@/lib/settings";
 import { all } from "@/lib/db";
 import { walletBalance } from "@/lib/users";
 import { FX, REFERRAL_REWARD, REFERRAL_WELCOME } from "@/lib/catalog";
@@ -20,6 +21,7 @@ export default async function Wallet({ searchParams }: { searchParams: SP }) {
   const t = await getT();
   const user = await requireUser({ park: true });
   const q = await searchParams;
+  clpPerAed(); // tipo CLP vigente para la vista en pesos chilenos
   const cur = FX[sp(q.cur) ?? ""] ? sp(q.cur)! : "AED";
   const w = walletBalance(user.id);
   const txs = all<{ id: number; type: string; amount: number; balance_after: number; description: string; created_at: string }>(

@@ -326,6 +326,23 @@ CREATE TABLE IF NOT EXISTS payments (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Ajustes del ecosistema editables desde administración (con historial)
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_by INTEGER REFERENCES users(id),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS settings_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  key TEXT NOT NULL,
+  old_value TEXT,
+  new_value TEXT NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  user_id INTEGER REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- ── TWO LOVE Park: parque de citas físico (importes en CLP) ──────────────────
 CREATE TABLE IF NOT EXISTS park_venues (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -367,6 +384,8 @@ CREATE TABLE IF NOT EXISTS park_bookings (
   deposit INTEGER NOT NULL,
   paid INTEGER NOT NULL DEFAULT 0,               -- CLP cobrados (billetera o local)
   status TEXT NOT NULL DEFAULT 'reservada',      -- reservada | en_curso | completada | cancelada | no_show
+  fx_rate REAL,                                  -- CLP por AED aplicado a esta reserva (cobros y devoluciones)
+  voucher_id INTEGER REFERENCES park_vouchers(id), -- pagada con tarjeta regalo
   qr TEXT NOT NULL UNIQUE,
   album TEXT UNIQUE,
   notes TEXT NOT NULL DEFAULT '',
@@ -419,6 +438,39 @@ CREATE TABLE IF NOT EXISTS park_sales (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Tarjetas regalo del Park ("Regala una cita"): pasivo hasta que se canjean
+CREATE TABLE IF NOT EXISTS park_vouchers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,
+  product TEXT NOT NULL,
+  buyer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  recipient_name TEXT NOT NULL,
+  recipient_email TEXT NOT NULL DEFAULT '',
+  message TEXT NOT NULL DEFAULT '',
+  amount INTEGER NOT NULL,                       -- CLP pagados por quien regala
+  fx_rate REAL NOT NULL,                         -- CLP por AED del cobro
+  status TEXT NOT NULL DEFAULT 'activo',         -- activo | canjeado
+  expires_at TEXT NOT NULL,
+  redeemed_by INTEGER REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Encuesta de validación del Park (pública, sin cuenta)
+CREATE TABLE IF NOT EXISTS park_survey (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  age INTEGER NOT NULL,                          -- índice de SURVEY.ages
+  together INTEGER NOT NULL,
+  frequency INTEGER NOT NULL,
+  spend INTEGER NOT NULL,
+  interests TEXT NOT NULL DEFAULT '',            -- zonas (csv)
+  pay INTEGER NOT NULL,                          -- ¿pagaría la Cita Completa? 0 sí · 1 quizás · 2 no
+  club INTEGER NOT NULL,                         -- ¿se uniría al Club? 0 sí · 1 quizás · 2 no
+  dates TEXT NOT NULL DEFAULT '',                -- fechas que celebran (csv)
+  comuna TEXT NOT NULL DEFAULT '',
+  email TEXT NOT NULL DEFAULT '',                -- opcional, para invitar al pop-up
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS park_photos (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   booking_id INTEGER NOT NULL REFERENCES park_bookings(id) ON DELETE CASCADE,
@@ -436,6 +488,9 @@ function migrate(conn: DatabaseSync) {
     conn.exec("UPDATE users SET referral_code = 'TL' || upper(hex(randomblob(3))) WHERE referral_code IS NULL");
   }
   if (!users.includes("referred_by")) conn.exec("ALTER TABLE users ADD COLUMN referred_by INTEGER REFERENCES users(id)");
+  const pb = cols("park_bookings");
+  if (!pb.includes("fx_rate")) conn.exec("ALTER TABLE park_bookings ADD COLUMN fx_rate REAL");
+  if (!pb.includes("voucher_id")) conn.exec("ALTER TABLE park_bookings ADD COLUMN voucher_id INTEGER REFERENCES park_vouchers(id)");
   if (!users.includes("scope")) conn.exec("ALTER TABLE users ADD COLUMN scope TEXT NOT NULL DEFAULT 'full'"); // full | park
   conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_ref ON users(referral_code)");
 }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { all } from "@/lib/db";
 import { getProfile } from "@/lib/users";
@@ -36,7 +37,9 @@ export default async function Gifts({ searchParams }: { searchParams: SP }) {
 
   return (
     <div>
-      <PageHeader title={t("Regalos")} subtitle={t("Sorprende con regalos virtuales o de nuestras marcas aliadas, entregados en mano. Tu nivel {tier} tiene {pct} de descuento.", { tier: tier.name, pct: pct(tier.giftDiscount) })} />
+      <PageHeader title={t("Regalos")} subtitle={t("Sorprende con regalos virtuales o de nuestras marcas aliadas, entregados en mano. Tu nivel {tier} tiene {pct} de descuento.", { tier: tier.name, pct: pct(tier.giftDiscount) })}>
+        <Link href="/park/regalar" className="btn-ghost">🎁 {t("Regala una cita en TWO LOVE Park")}</Link>
+      </PageHeader>
       <Flash ok={sp(q.ok)} error={sp(q.error)} />
 
       <form action={sendGift} className="space-y-8">

@@ -32,6 +32,7 @@ export default async function ParkHome() {
           <Link href={user ? "/park/pasaporte" : "/park/registro"} className="btn-ghost">{user ? t("Mi pasaporte del amor") : t("Crear cuenta (18+)")}</Link>
         </div>
         <p className="mt-6 text-xs text-muted">{t("Una sola cuenta TWO LOVE: la misma billetera, notificaciones y membresía en Dubái y en el Park.")}</p>
+        <p className="mt-2 text-sm"><Link href="/park/encuesta" className="text-glow underline">{t("¿Cómo son vuestras citas? Responde nuestra encuesta (2 min)")}</Link> · <Link href="/park/regalar" className="text-glow underline">{t("Regala una cita")}</Link></p>
       </section>
 
       <section>

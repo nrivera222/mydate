@@ -91,6 +91,8 @@ for (const x of park.ROADMAP) { add(x.when, "park"); add(x.name, "park"); add(x.
   add(`${x}: en {d} días 💞`, "park");
 });
 add("Celebradlo en TWO LOVE Park con un paquete especial.", "park");
+for (const k of ["ages", "together", "frequency", "spend", "answers"]) park.SURVEY[k].forEach((x) => add(x, "park:survey"));
+add("Tipo de cambio CLP por AED", "settings");
 
 // Valores internos que se muestran traducidos (estados, tipos, canales, etapas del CRM)
 const ENUMS = ["requested", "accepted", "completed", "declined", "cancelled", "disputed", "companion", "lounge", "approved", "pending", "rejected",

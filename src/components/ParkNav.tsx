@@ -6,6 +6,7 @@ const TABS = [
   ["/park/reservar", "Reservar"],
   ["/park/mis-citas", "Mis citas"],
   ["/park/pasaporte", "Pasaporte y pareja"],
+  ["/park/regalar", "Regalar"],
 ];
 
 /** Pestañas del parque de citas. */

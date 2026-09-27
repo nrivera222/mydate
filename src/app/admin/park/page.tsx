@@ -1,16 +1,18 @@
+import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
+import { clpPerAed } from "@/lib/settings";
 import { all, one } from "@/lib/db";
 import { getT } from "@/lib/i18n";
 import { clp, clpM, pct } from "@/lib/money";
 import { STREAM_LABEL } from "@/lib/catalog";
-import { addDays, venueNow, BASE_CASE, CLP_PER_AED, CLUB, PARK_STREAMS, ROADMAP, SEGMENTS, productById } from "@/lib/park-catalog";
+import { addDays, venueNow, filsToClp, BASE_CASE, CLUB, PARK_STREAMS, ROADMAP, SEGMENTS, productById } from "@/lib/park-catalog";
 import { pilotVenue, type ParkBooking } from "@/lib/park";
 import { parkCancelAdmin, parkCheckIn, parkComplete, parkNoShow, parkPhotos, parkSale } from "../../actions/park";
 import { Bars, Columns, Empty, Flash, PageHeader, sp, Stat, type SP } from "@/components/ui";
 
 const STATUS = { reservada: "Reservada", en_curso: "En curso", completada: "Completada", cancelada: "Cancelada", no_show: "No presentada" } as Record<string, string>;
-/** fils (AED × 100) de la tabla de ingresos → CLP netos */
-const toClp = (fils: number) => Math.round((fils / 100) * CLP_PER_AED);
+/** fils (AED × 100) de la tabla de ingresos → CLP netos, al tipo vigente */
+const toClp = (fils: number) => filsToClp(fils, clpPerAed());
 
 export default async function AdminPark({ searchParams }: { searchParams: SP }) {
   const t = await getT();
@@ -52,6 +54,12 @@ export default async function AdminPark({ searchParams }: { searchParams: SP }) 
      SELECT COUNT(*) AS base, SUM(EXISTS (SELECT 1 FROM park_bookings b WHERE b.user_id = f.user_id AND b.status = 'completada' AND b.slot_at > f.first AND b.slot_at <= datetime(f.first, '+60 days'))) AS again FROM f`,
   )!;
   const repeatRate = repeat.base ? (repeat.again ?? 0) / repeat.base : 0;
+  // Tarjetas regalo: pasivo (vendidas sin canjear) e ingreso reconocido al canjear
+  const vouchers = one<{ open: number; openV: number; used: number }>(
+    `SELECT SUM(status = 'activo' AND datetime(expires_at) > datetime('now')) AS open,
+            COALESCE(SUM(CASE WHEN status = 'activo' AND datetime(expires_at) > datetime('now') THEN amount END), 0) AS openV,
+            SUM(status = 'canjeado') AS used FROM park_vouchers`,
+  )!;
 
   const segRows = all<{ seg: string; n: number }>(
     `SELECT CASE WHEN b.minor = 1 THEN 'teen' WHEN p.birth_year IS NULL THEN 'young'
@@ -72,7 +80,12 @@ export default async function AdminPark({ searchParams }: { searchParams: SP }) 
 
   return (
     <div>
-      <PageHeader title={t("TWO LOVE Park · operación")} subtitle={`${venue.name} · ${t(venue.city)} · ${t("Mes {n} del piloto", { n: month })}`} />
+      <PageHeader title={t("TWO LOVE Park · operación")} subtitle={`${venue.name} · ${t(venue.city)} · ${t("Mes {n} del piloto", { n: month })}`}>
+        <div className="flex gap-2">
+          <Link href="/admin/park/escaner" className="btn-brand">📷 {t("Escáner de la puerta")}</Link>
+          <Link href="/admin/park/encuesta" className="btn-ghost">{t("Encuesta de validación")}</Link>
+        </div>
+      </PageHeader>
       <Flash ok={sp(q.ok)} error={sp(q.error)} />
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -175,6 +188,7 @@ export default async function AdminPark({ searchParams }: { searchParams: SP }) 
             <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-xl border border-line p-3"><div className="text-muted">{t("Socios Two Love Club")}</div><div className="font-display text-2xl">{clubMembers}</div><div className="text-xs text-muted">{t("Meta {n}", { n: CLUB.targetMembers })}</div></div>
               <div className="rounded-xl border border-line p-3"><div className="text-muted">{t("Recompra a 60 días")}</div><div className="font-display text-2xl">{pct(repeatRate)}</div><div className="text-xs text-muted">{t("Meta {n}", { n: pct(CLUB.targetRepeat) })}</div></div>
+              <div className="col-span-2 rounded-xl border border-line p-3"><div className="text-muted">{t("Tarjetas regalo sin canjear (pasivo)")}</div><div className="font-display text-2xl">{clp(vouchers.openV)}</div><div className="text-xs text-muted">{t("{open} pendientes · {used} canjeadas", { open: vouchers.open ?? 0, used: vouchers.used ?? 0 })}</div></div>
             </div>
           </div>
           <div>

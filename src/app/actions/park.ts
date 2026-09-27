@@ -5,16 +5,17 @@ import crypto from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { requireAdmin, requireUser } from "@/lib/auth";
 import { one, transaction } from "@/lib/db";
-import { flash, int, str } from "@/lib/flash";
+import { flash, int, list, str } from "@/lib/flash";
 import { LedgerError, post, recordRevenue } from "@/lib/ledger";
 import { notify } from "@/lib/notify";
 import { isBlockedBetween, isMatch } from "@/lib/users";
 import { clp } from "@/lib/money";
 import { saveUpload, UploadError } from "@/lib/uploads";
 import {
-  CANCEL_FREE_HOURS, CLUB, DEPOSIT_RATE, hoursUntil, DESTINATIONS, PARK_STREAMS, PASSPORT_REWARD_CLP, STAMPS, clpToFils, productById, splitVat,
+  CANCEL_FREE_HOURS, CLUB, DEPOSIT_RATE, VOUCHER_MONTHS, PARK_ZONES, SURVEY, hoursUntil, DESTINATIONS, PARK_STREAMS, PASSPORT_REWARD_CLP, STAMPS, clpToFils, productById, splitVat,
 } from "@/lib/park-catalog";
-import { clubStatus, coupleOf, parkDiscount, partnerOf, pilotVenue, slotsFor, type ParkBooking } from "@/lib/park";
+import { clpPerAed } from "@/lib/settings";
+import { activeVoucher, clubStatus, coupleOf, parkDiscount, partnerOf, pilotVenue, slotsFor, type ParkBooking } from "@/lib/park";
 
 class BusinessError extends Error {}
 
@@ -30,11 +31,13 @@ function attempt(fn: (conn: DatabaseSync) => void): string | null {
 }
 
 /** Registra un ingreso del Park (importe CLP con IVA; negativo para devoluciones). */
-function parkRevenue(conn: DatabaseSync, stream: string, gross: number, userId: number | null, ref: string) {
+function parkRevenue(conn: DatabaseSync, stream: string, gross: number, userId: number | null, ref: string, rate = clpPerAed()) {
   const { net, vat } = splitVat(Math.abs(gross));
   const sign = gross < 0 ? -1 : 1;
-  recordRevenue(conn, stream, sign * clpToFils(net), sign * clpToFils(vat), userId, ref);
+  recordRevenue(conn, stream, sign * clpToFils(net, rate), sign * clpToFils(vat, rate), userId, ref);
 }
+/** Tipo de cambio de una reserva: el aplicado al crearla (cobros y devoluciones coherentes). */
+const rateOf = (b: ParkBooking) => b.fx_rate ?? clpPerAed();
 
 const token = (n = 12) => crypto.randomBytes(n).toString("base64url");
 const isIdentityVerified = (userId: number) => !!one("SELECT 1 FROM verifications WHERE user_id = ? AND type = 'identity' AND status = 'approved'", userId);
@@ -79,28 +82,55 @@ export async function bookPark(fd: FormData) {
   const partnerName = minor ? "" : str(fd, "partner_name", 60);
   const destination = product.id === "viaje" ? (DESTINATIONS.includes(str(fd, "destination", 20)) ? str(fd, "destination", 20) : DESTINATIONS[0]) : null;
 
-  const { rate } = parkDiscount(user.id, user.tier);
-  const discount = Math.round(product.price * rate);
+  // Tarjeta regalo: cubre la experiencia completa (sin anticipo ni descuento)
+  const voucherCode = str(fd, "voucher", 20).toUpperCase();
+  const voucher = voucherCode ? activeVoucher(voucherCode) : undefined;
+  if (voucherCode && !voucher) flash(back, "Código de regalo no válido o caducado.", "error");
+  if (voucher && voucher.product !== product.id) flash(back, `Este regalo es para «${productById(voucher.product)?.name ?? voucher.product}».`, "error");
+  const { rate: discountRate } = parkDiscount(user.id, user.tier);
+  const discount = voucher ? 0 : Math.round(product.price * discountRate);
   const total = product.price - discount;
-  const deposit = Math.round(total * DEPOSIT_RATE);
+  const deposit = voucher ? 0 : Math.round(total * DEPOSIT_RATE);
+  const rate = clpPerAed();
   let id = 0;
   const err = attempt((conn) => {
     // Cupo verificado de nuevo dentro de la transacción (dos reservas simultáneas no exceden la capacidad)
     const taken = (conn.prepare("SELECT COUNT(*) AS n FROM park_bookings WHERE venue_id = ? AND product = ? AND slot_at = ? AND status IN ('reservada','en_curso')")
       .get(venue.id, product.id, slotAt) as { n: number }).n;
     if (taken >= product.capacity) throw new BusinessError("Ese horario ya está completo. Elige otro.");
-    const r = conn.prepare(`INSERT INTO park_bookings (user_id, venue_id, product, slot_at, partner_id, partner_name, destination, minor, minor_names, photo_consent, price, discount, total, deposit, paid, qr, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    const r = conn.prepare(`INSERT INTO park_bookings (user_id, venue_id, product, slot_at, partner_id, partner_name, destination, minor, minor_names, photo_consent, price, discount, total, deposit, paid, qr, notes, fx_rate, voucher_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .run(user.id, venue.id, product.id, slotAt, minor ? null : partnerId, partnerName, destination, minor ? 1 : 0, minor ? minorNames : "",
-        fd.get("photos") === "on" && !minor ? 1 : 0, product.price, discount, total, deposit, deposit, "TLP-" + token(9), str(fd, "notes", 400));
+        fd.get("photos") === "on" && !minor ? 1 : 0, product.price, discount, total, deposit, voucher ? total : deposit, "TLP-" + token(9), str(fd, "notes", 400), voucher ? voucher.fx_rate : rate, voucher?.id ?? null);
     id = Number(r.lastInsertRowid);
-    post(conn, user.id, "park", -clpToFils(deposit), `TWO LOVE Park · ${product.name} · anticipo 30 %`, `park:${id}`);
-    parkRevenue(conn, product.stream, deposit, user.id, `park:${id}`);
+    if (voucher) {
+      // El pasivo de la tarjeta se reconoce como ingreso al canjearla
+      const upd = conn.prepare("UPDATE park_vouchers SET status = 'canjeado', redeemed_by = ? WHERE id = ? AND status = 'activo'").run(user.id, voucher.id);
+      if (!upd.changes) throw new BusinessError("Código de regalo no válido o caducado.");
+      parkRevenue(conn, product.stream, voucher.amount, user.id, `park:${id}`, voucher.fx_rate);
+      notify(conn, voucher.buyer_id, "regalo", `${user.name.split(" ")[0]} ha canjeado tu regalo de TWO LOVE Park 🎁`, `Cita para el ${slotAt.slice(0, 16)}: ${product.name}`, "/park/regalar");
+    } else {
+      post(conn, user.id, "park", -clpToFils(deposit, rate), `TWO LOVE Park · ${product.name} · anticipo 30 %`, `park:${id}`);
+      parkRevenue(conn, product.stream, deposit, user.id, `park:${id}`, rate);
+    }
     if (!minor) notify(conn, partnerId, "reserva", `${user.name.split(" ")[0]} te invita a TWO LOVE Park`, `Cita para el ${slotAt.slice(0, 16)}: ${product.name}`, "/park/mis-citas");
   });
   if (err) flash(back, err, "error");
   revalidatePath("/park/mis-citas");
+  if (voucher) flash(`/park/mis-citas#b${id}`, "¡Reserva confirmada con tu regalo! Muestra tu código QR al llegar.");
   flash(`/park/mis-citas#b${id}`, `¡Reserva confirmada! Anticipo de ${clp(deposit)} cobrado. Muestra tu código QR al llegar.`);
+}
+
+/** Devuelve lo pagado: a la billetera, o reactiva la tarjeta regalo con la que se pagó. */
+function refundBooking(conn: DatabaseSync, b: ParkBooking, stream: string) {
+  if (b.voucher_id) {
+    const v = conn.prepare("SELECT amount, fx_rate FROM park_vouchers WHERE id = ?").get(b.voucher_id) as { amount: number; fx_rate: number };
+    conn.prepare("UPDATE park_vouchers SET status = 'activo', redeemed_by = NULL WHERE id = ?").run(b.voucher_id);
+    parkRevenue(conn, stream, -v.amount, b.user_id, `park:${b.id}`, v.fx_rate);
+  } else if (b.paid) {
+    post(conn, b.user_id, "reembolso", clpToFils(b.paid, rateOf(b)), "TWO LOVE Park · devolución del anticipo", `park:${b.id}`);
+    parkRevenue(conn, stream, -b.paid, b.user_id, `park:${b.id}`, rateOf(b));
+  }
 }
 
 function loadBooking(id: number) {
@@ -115,14 +145,12 @@ export async function cancelPark(fd: FormData) {
   const p = productById(b.product);
   const err = attempt((conn) => {
     conn.prepare("UPDATE park_bookings SET status = 'cancelada' WHERE id = ?").run(b.id);
-    if (refundable && b.paid) {
-      post(conn, user.id, "reembolso", clpToFils(b.paid), `TWO LOVE Park · devolución del anticipo`, `park:${b.id}`);
-      parkRevenue(conn, p?.stream ?? "park_pase", -b.paid, user.id, `park:${b.id}`);
-    }
+    if (refundable) refundBooking(conn, b, p?.stream ?? "park_pase");
     notify(conn, b.partner_id, "reserva", "Cita en TWO LOVE Park cancelada", `Reserva del ${b.slot_at.slice(0, 16)}`, "/park/mis-citas");
   });
   if (err) flash("/park/mis-citas", err, "error");
   revalidatePath("/park/mis-citas");
+  if (refundable && b.voucher_id) flash("/park/mis-citas", "Reserva cancelada. Tu regalo vuelve a estar disponible.");
   flash("/park/mis-citas", refundable ? "Reserva cancelada. Anticipo devuelto a tu billetera." : "Reserva cancelada. Con menos de 48 h el anticipo no se devuelve.");
 }
 
@@ -181,7 +209,7 @@ export async function joinClub() {
     const expires = new Date(from + 30 * 86_400_000).toISOString().replace("T", " ").slice(0, 19);
     conn.prepare(`INSERT INTO park_club (user_id, expires_at) VALUES (?, ?)
       ON CONFLICT(user_id) DO UPDATE SET expires_at = excluded.expires_at, status = 'activa'`).run(user.id, expires);
-    post(conn, user.id, "park_club", -clpToFils(CLUB.price), "Two Love Club · 1 mes", `park_club:${user.id}`);
+    post(conn, user.id, "park_club", -clpToFils(CLUB.price, clpPerAed()), "Two Love Club · 1 mes", `park_club:${user.id}`);
     parkRevenue(conn, "park_club", CLUB.price, user.id, `park_club:${user.id}`);
   });
   if (err) flash("/park/pasaporte", err, "error");
@@ -201,30 +229,33 @@ export async function cancelClub() {
 // ── Operación del local (administración) ─────────────────────────────────────
 
 const ADMIN_BACK = "/admin/park";
+/** Vuelve al escáner de la puerta (con la reserva cargada) o a la agenda, según desde dónde se actuó. */
+const backFor = (fd: FormData, qr?: string) =>
+  str(fd, "back", 40) === "/admin/park/escaner" ? `/admin/park/escaner${qr ? `?qr=${encodeURIComponent(qr)}` : ""}` : ADMIN_BACK;
 
 export async function parkCheckIn(fd: FormData) {
   await requireAdmin();
   const b = loadBooking(int(fd, "booking"));
-  if (!b || b.status !== "reservada") flash(ADMIN_BACK, "Reserva no válida.", "error");
+  if (!b || b.status !== "reservada") flash(backFor(fd), "Reserva no válida.", "error");
   const method = str(fd, "method", 10) === "local" ? "local" : "wallet";
   const rest = b.total - b.paid;
   const p = productById(b.product);
   const err = attempt((conn) => {
     if (rest > 0) {
-      if (method === "wallet") post(conn, b.user_id, "park", -clpToFils(rest), `TWO LOVE Park · ${p?.name ?? ""} · saldo`, `park:${b.id}`);
-      parkRevenue(conn, p?.stream ?? "park_pase", rest, b.user_id, `park:${b.id}`);
+      if (method === "wallet") post(conn, b.user_id, "park", -clpToFils(rest, rateOf(b)), `TWO LOVE Park · ${p?.name ?? ""} · saldo`, `park:${b.id}`);
+      parkRevenue(conn, p?.stream ?? "park_pase", rest, b.user_id, `park:${b.id}`, rateOf(b));
     }
     conn.prepare("UPDATE park_bookings SET status = 'en_curso', paid = total, checked_in_at = datetime('now') WHERE id = ?").run(b.id);
   });
-  if (err) flash(ADMIN_BACK, `${err} Cobra el saldo en el local.`, "error");
+  if (err) flash(backFor(fd, b.qr), `${err} Cobra el saldo en el local.`, "error");
   revalidatePath(ADMIN_BACK);
-  flash(ADMIN_BACK, `Check-in de ${b.qr} registrado.`);
+  flash(backFor(fd, b.qr), `Check-in de ${b.qr} registrado.`);
 }
 
 export async function parkComplete(fd: FormData) {
   await requireAdmin();
   const b = loadBooking(int(fd, "booking"));
-  if (!b || b.status !== "en_curso") flash(ADMIN_BACK, "Reserva no válida.", "error");
+  if (!b || b.status !== "en_curso") flash(backFor(fd), "Reserva no válida.", "error");
   const p = productById(b.product);
   transaction((conn) => {
     const album = b.photo_consent ? token(18) : null;
@@ -236,44 +267,41 @@ export async function parkComplete(fd: FormData) {
       const n = (conn.prepare("SELECT COUNT(*) AS n FROM park_stamps WHERE user_id = ?").get(uid) as { n: number }).n;
       const ref = `park_passport:${uid}`;
       if (n >= STAMPS.length && !conn.prepare("SELECT 1 FROM wallet_tx WHERE ref = ?").get(ref)) {
-        post(conn, uid, "bono", clpToFils(PASSPORT_REWARD_CLP), "Pasaporte del amor completo: Cita Clásica de regalo", ref);
+        post(conn, uid, "bono", clpToFils(PASSPORT_REWARD_CLP, clpPerAed()), "Pasaporte del amor completo: Cita Clásica de regalo", ref);
         notify(conn, uid, "sistema", "¡Pasaporte del amor completo! 🎉", "Tienes una Cita Clásica de regalo en tu billetera.", "/park/pasaporte");
       }
     }
     notify(conn, b.user_id, "reserva", "Gracias por vuestra cita en TWO LOVE Park 💞", p?.stamps.length ? "Nuevos sellos en vuestro pasaporte." : "", b.photo_consent ? "/park/mis-citas" : "/park/pasaporte");
   });
   revalidatePath(ADMIN_BACK);
-  flash(ADMIN_BACK, "Cita completada: sellos entregados.");
+  flash(backFor(fd, b.qr), "Cita completada: sellos entregados.");
 }
 
 export async function parkNoShow(fd: FormData) {
   await requireAdmin();
   const b = loadBooking(int(fd, "booking"));
-  if (!b || b.status !== "reservada") flash(ADMIN_BACK, "Reserva no válida.", "error");
+  if (!b || b.status !== "reservada") flash(backFor(fd), "Reserva no válida.", "error");
   transaction((conn) => {
     conn.prepare("UPDATE park_bookings SET status = 'no_show' WHERE id = ?").run(b.id);
     notify(conn, b.user_id, "reserva", "No pudimos recibiros en TWO LOVE Park", "El anticipo queda retenido según las condiciones de reserva.", "/park/mis-citas");
   });
   revalidatePath(ADMIN_BACK);
-  flash(ADMIN_BACK, "Marcada como no presentada.");
+  flash(backFor(fd, b.qr), "Marcada como no presentada.");
 }
 
 export async function parkCancelAdmin(fd: FormData) {
   await requireAdmin();
   const b = loadBooking(int(fd, "booking"));
-  if (!b || b.status !== "reservada") flash(ADMIN_BACK, "Reserva no válida.", "error");
+  if (!b || b.status !== "reservada") flash(backFor(fd), "Reserva no válida.", "error");
   const p = productById(b.product);
   const err = attempt((conn) => {
     conn.prepare("UPDATE park_bookings SET status = 'cancelada' WHERE id = ?").run(b.id);
-    if (b.paid) {
-      post(conn, b.user_id, "reembolso", clpToFils(b.paid), "TWO LOVE Park · devolución del anticipo", `park:${b.id}`);
-      parkRevenue(conn, p?.stream ?? "park_pase", -b.paid, b.user_id, `park:${b.id}`);
-    }
+    refundBooking(conn, b, p?.stream ?? "park_pase");
     notify(conn, b.user_id, "reserva", "El local ha cancelado tu cita en TWO LOVE Park", "Te hemos devuelto el anticipo íntegro.", "/park/mis-citas");
   });
-  if (err) flash(ADMIN_BACK, err, "error");
+  if (err) flash(backFor(fd, b.qr), err, "error");
   revalidatePath(ADMIN_BACK);
-  flash(ADMIN_BACK, "Reserva cancelada y anticipo devuelto.");
+  flash(backFor(fd, b.qr), "Reserva cancelada y anticipo devuelto.");
 }
 
 export async function parkSale(fd: FormData) {
@@ -330,4 +358,59 @@ export async function upgradeToPrivate() {
   });
   revalidatePath("/", "layout");
   flash("/perfil/editar", "¡Ya tienes acceso completo a TWO LOVE! Completa tu perfil para empezar.");
+}
+
+// ── Tarjetas regalo: "Regala una cita" ──────────────────────────────────────
+
+export async function buyVoucher(fd: FormData) {
+  const user = await requireUser({ park: true });
+  const product = productById(str(fd, "product", 20));
+  const name = str(fd, "recipient_name", 60);
+  const email = str(fd, "recipient_email", 160).toLowerCase();
+  if (!product) flash("/park/regalar", "Elige una experiencia.", "error");
+  if (user.role === "admin") flash("/park/regalar", "Las cuentas de administración no hacen reservas.", "error");
+  if (name.length < 2) flash("/park/regalar", "Indica a quién va dirigido el regalo.", "error");
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) flash("/park/regalar", "Email no válido.", "error");
+  // Quien regala paga con su descuento de membresía/Club; la tarjeta cubre la experiencia completa
+  const { rate: discountRate } = parkDiscount(user.id, user.tier);
+  const amount = product.price - Math.round(product.price * discountRate);
+  const rate = clpPerAed();
+  const code = "TLG-" + crypto.randomBytes(4).toString("hex").toUpperCase();
+  const err = attempt((conn) => {
+    const id = Number(conn.prepare(`INSERT INTO park_vouchers (code, product, buyer_id, recipient_name, recipient_email, message, amount, fx_rate, expires_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+${VOUCHER_MONTHS} months'))`).run(code, product.id, user.id, name, email, str(fd, "message", 300), amount, rate).lastInsertRowid);
+    post(conn, user.id, "park", -clpToFils(amount, rate), `TWO LOVE Park · regalo ${product.name}`, `park_voucher:${id}`);
+    // Si quien lo recibe ya tiene cuenta, le llega el aviso con el enlace para canjearlo
+    const to = email ? (conn.prepare("SELECT id FROM users WHERE email = ? AND status = 'active'").get(email) as { id: number } | undefined) : undefined;
+    if (to && to.id !== user.id) notify(conn, to.id, "regalo", `${user.name.split(" ")[0]} te regala una cita en TWO LOVE Park 🎁`, `${product.name} · código ${code}`, `/park/reservar?p=${product.id}&v=${code}`);
+  });
+  if (err) flash("/park/regalar", err, "error");
+  revalidatePath("/park/regalar");
+  flash("/park/regalar", `Regalo creado: ${code}. Compártelo con ${name}; vale ${VOUCHER_MONTHS} meses.`);
+}
+
+// ── Encuesta de validación (pública) ─────────────────────────────────────────
+
+export async function submitSurvey(fd: FormData) {
+  const back = "/park/encuesta";
+  if (str(fd, "website", 100)) flash(back, "¡Gracias por responder!"); // trampa para bots
+  const pick = (key: string, n: number) => {
+    const v = int(fd, key);
+    return fd.get(key) !== null && v >= 0 && v < n ? v : -1;
+  };
+  const age = pick("age", SURVEY.ages.length), together = pick("together", SURVEY.together.length), frequency = pick("frequency", SURVEY.frequency.length);
+  const spend = pick("spend", SURVEY.spend.length), pay = pick("pay", SURVEY.answers.length), club = pick("club", SURVEY.answers.length);
+  if ([age, together, frequency, spend, pay, club].some((x) => x < 0)) flash(back, "Responde todas las preguntas obligatorias.", "error");
+  // No se guardan datos de contacto de menores de edad
+  const email = age === 0 ? "" : str(fd, "email", 160).toLowerCase();
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) flash(back, "Email no válido.", "error");
+  if (email && fd.get("consent") !== "on") flash(back, "Para dejarnos tu email acepta que te contactemos para el pop-up.", "error");
+  if (email && one("SELECT 1 FROM park_survey WHERE email = ?", email)) flash(back, "Ya recibimos tu respuesta. ¡Gracias!");
+  const zones = list(fd, "interests", PARK_ZONES.map((z) => z.id));
+  const dates = list(fd, "dates", SURVEY.dates);
+  transaction((conn) => {
+    conn.prepare("INSERT INTO park_survey (age, together, frequency, spend, interests, pay, club, dates, comuna, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .run(age, together, frequency, spend, zones.join(","), pay, club, dates.join(","), str(fd, "comuna", 60), email);
+  });
+  flash(`${back}?gracias=1`, "¡Gracias por responder! Nos ayudas a diseñar TWO LOVE Park.");
 }

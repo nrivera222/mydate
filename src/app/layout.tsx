@@ -62,6 +62,7 @@ const PARK_NAV = [
   ["/park/reservar", "Reservar"],
   ["/park/mis-citas", "Mis citas"],
   ["/park/pasaporte", "Pasaporte y pareja"],
+  ["/park/regalar", "Regalar"],
   ["/billetera", "Billetera"],
 ];
 
@@ -72,6 +73,7 @@ const ADMIN_NAV = [
   ["/admin/erp", "ERP"],
   ["/admin/eventos", "Eventos"],
   ["/admin/park", "Park"],
+  ["/admin/ajustes", "Ajustes"],
   ["/admin/seguridad", "Seguridad"],
 ];
 

@@ -1,7 +1,7 @@
 import "server-only";
 import type { DatabaseSync } from "node:sqlite";
 import crypto from "node:crypto";
-import { addDays, venueNow, BASE_CASE, clpToFils, PARK_PRODUCTS, productById, splitVat } from "./park-catalog";
+import { addDays, venueNow, PARK_ZONES, SURVEY, BASE_CASE, clpToFils, PARK_PRODUCTS, productById, splitVat } from "./park-catalog";
 import { post, recordRevenue } from "./ledger";
 
 const token = (n = 12) => crypto.randomBytes(n).toString("base64url");
@@ -143,6 +143,28 @@ export function seedParkDemo(conn: DatabaseSync, o: { r: () => number; demoId: n
   conn.prepare("INSERT INTO park_couples (user_a, user_b, partner_name, since, code, created_at) VALUES (?, ?, '', ?, ?, ?)")
     .run(parkIds[0], parkIds[1], day(PARK_PEOPLE[0][3]).slice(0, 10), "TLP-" + token(4).toUpperCase().replace(/[^A-Z0-9]/g, "X"), day(150));
   book(parkIds[0], "dia100", day(-4, 18), "reservada", { partnerId: parkIds[1] });
+
+  // Tarjetas regalo: pendientes (pasivo), una canjeada y una recibida por el demo
+  const vIns = conn.prepare(`INSERT INTO park_vouchers (code, product, buyer_id, recipient_name, recipient_email, message, amount, fx_rate, status, expires_at, redeemed_by, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  const vcode = () => "TLG-" + crypto.randomBytes(4).toString("hex").toUpperCase();
+  const demoEmail = (conn.prepare("SELECT email FROM users WHERE id = ?").get(demoId) as { email: string }).email;
+  vIns.run(vcode(), "viaje", parkIds[4], "Nadia", demoEmail, "¡Para vuestro próximo viaje! 🗼", 34_900, 255, "activo", day(-300), null, day(12));
+  vIns.run(vcode(), "cumplemes", demoId, "Omar", "", "Feliz cumplemes 💞", 40_500, 255, "activo", day(-330), null, day(35));
+  vIns.run(vcode(), "anillos", parkIds[2], "Tomás", "tomas@park.twolove.app", "", 39_900, 255, "activo", day(-340), null, day(25));
+  vIns.run(vcode(), "completa", parkIds[3], "Josefa", "josefa@park.twolove.app", "Te quiero", 29_900, 255, "canjeado", day(-280), parkIds[2], day(85));
+
+  // Encuesta de validación: 142 respuestas hacia la meta de 300
+  const sIns = conn.prepare("INSERT INTO park_survey (age, together, frequency, spend, interests, pay, club, dates, comuna, email, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+  const weighted = (w: number[]) => { let x = r() * w.reduce((a, b) => a + b, 0); return w.findIndex((v) => (x -= v) < 0); };
+  const COMUNAS = ["Providencia", "Ñuñoa", "Santiago Centro", "Las Condes", "Maipú", "La Florida", "Vitacura", "San Miguel"];
+  for (let i = 0; i < 142; i++) {
+    const age = weighted([10, 55, 25, 10]);
+    const interests = PARK_ZONES.filter((z) => r() < ({ cabinas: 0.78, escenarios: 0.64, juegos: 0.58, cafe: 0.52, fechas: 0.44, maquinas: 0.36 } as Record<string, number>)[z.id]).map((z) => z.id);
+    const dates = SURVEY.dates.filter((d) => r() < ({ cumplemes: age <= 1 ? 0.7 : 0.25, dia100: 0.45, aniversario: 0.8, cumpleanos: 0.6, pedida: 0.12 } as Record<string, number>)[d]);
+    sIns.run(age, weighted([25, 40, 20, 15]), weighted([35, 45, 20]), weighted([20, 40, 28, 12]), interests.join(","), weighted([42, 33, 25]), weighted([22, 38, 40]),
+      dates.join(","), pick(COMUNAS), age > 0 && r() < 0.4 ? `pareja${i}@encuesta.cl` : "", day(Math.floor(r() * 60), 10 + Math.floor(r() * 12)));
+  }
 
   // Two Love Club: el demo y una docena de parejas
   const club = conn.prepare("INSERT OR IGNORE INTO park_club (user_id, since, expires_at) VALUES (?, ?, ?)");

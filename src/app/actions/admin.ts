@@ -7,6 +7,7 @@ import { flash, int, str } from "@/lib/flash";
 import { post, recordRevenue, releaseHold } from "@/lib/ledger";
 import { notify } from "@/lib/notify";
 import { VERIFICATION_TYPES } from "@/lib/catalog";
+import { SETTINGS, setSetting } from "@/lib/settings";
 
 export async function reviewVerification(fd: FormData) {
   const admin = await requireAdmin();
@@ -194,4 +195,16 @@ export async function cancelEvent(fd: FormData) {
   });
   revalidatePath("/eventos");
   flash("/admin/eventos", "Evento cancelado y entradas reembolsadas.");
+}
+
+// ── Ajustes del ecosistema ───────────────────────────────────────────────────
+
+export async function updateFxRate(fd: FormData) {
+  const admin = await requireAdmin();
+  const value = Number(String(fd.get("value") ?? "").replace(",", "."));
+  const { min, max } = SETTINGS.clp_per_aed;
+  if (!Number.isFinite(value) || value < min || value > max) flash("/admin/ajustes", `El tipo de cambio debe estar entre ${min} y ${max} CLP por AED.`, "error");
+  transaction((conn) => setSetting(conn, "clp_per_aed", Math.round(value * 100) / 100, admin.id, str(fd, "note", 200)));
+  revalidatePath("/", "layout");
+  flash("/admin/ajustes", "Tipo de cambio actualizado. Se aplica a las nuevas reservas; las existentes conservan el suyo.");
 }

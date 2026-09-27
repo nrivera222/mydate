@@ -10,7 +10,7 @@ import {
 export type ParkBooking = {
   id: number; user_id: number; venue_id: number; product: string; slot_at: string; partner_id: number | null; partner_name: string;
   destination: string | null; minor: number; minor_names: string; photo_consent: number; price: number; discount: number; total: number;
-  deposit: number; paid: number; status: string; qr: string; album: string | null; notes: string; created_at: string;
+  deposit: number; paid: number; status: string; qr: string; album: string | null; notes: string; created_at: string; fx_rate: number | null; voucher_id: number | null;
   checked_in_at: string | null; completed_at: string | null;
 };
 
@@ -86,3 +86,12 @@ export function albumByToken(tokenValue: string) {
      WHERE b.album = ? AND b.photo_consent = 1 AND datetime(COALESCE(b.completed_at, b.checked_in_at, b.slot_at), '+${ALBUM_DAYS} days') > datetime('now')`, tokenValue,
   );
 }
+
+export type Voucher = {
+  id: number; code: string; product: string; buyer_id: number; recipient_name: string; recipient_email: string; message: string;
+  amount: number; fx_rate: number; status: string; expires_at: string; redeemed_by: number | null; created_at: string;
+};
+
+/** Tarjeta regalo canjeable (activa y vigente). */
+export const activeVoucher = (code: string) =>
+  one<Voucher>("SELECT * FROM park_vouchers WHERE code = ? AND status = 'activo' AND datetime(expires_at) > datetime('now')", code.trim().toUpperCase());

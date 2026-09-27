@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
+import { clpPerAed } from "@/lib/settings";
 import { all } from "@/lib/db";
 import { getT } from "@/lib/i18n";
 import { clp, money } from "@/lib/money";
 import { walletBalance } from "@/lib/users";
 import { hoursUntil, venueNow, CANCEL_FREE_HOURS, DEPOSIT_RATE, DESTINATIONS, PARK_PRODUCTS, PRODUCT_KIND_LABEL, clpToFils, productById, stampById, type ParkProductKind } from "@/lib/park-catalog";
-import { coupleOf, parkDiscount, partnerOf, pilotVenue, slotsFor } from "@/lib/park";
+import { activeVoucher, coupleOf, parkDiscount, partnerOf, pilotVenue, slotsFor } from "@/lib/park";
 import { bookPark } from "../../actions/park";
 import { Empty, Flash, PageHeader, sp, type SP } from "@/components/ui";
 import { ParkNav } from "@/components/ParkNav";
@@ -21,10 +22,14 @@ export default async function ParkBook({ searchParams }: { searchParams: SP }) {
   const today = venueNow().date;
   const date = /^\d{4}-\d{2}-\d{2}$/.test(sp(q.d) ?? "") && sp(q.d)! >= today ? sp(q.d)! : today;
   const slots = venue ? slotsFor(venue.id, product, date, minor).filter((s) => hoursUntil(`${date} ${String(s.hour).padStart(2, "0")}:00:00`) > 1) : [];
+  // Tarjeta regalo (?v=CODIGO): si es para esta experiencia, la cubre completa
+  const vcode = (sp(q.v) ?? "").toUpperCase().slice(0, 20);
+  const voucher = vcode ? activeVoucher(vcode) : undefined;
+  const gifted = voucher?.product === product.id;
   const { rate, source } = parkDiscount(user.id, user.tier);
-  const discount = Math.round(product.price * rate);
+  const discount = gifted ? 0 : Math.round(product.price * rate);
   const total = product.price - discount;
-  const deposit = Math.round(total * DEPOSIT_RATE);
+  const deposit = gifted ? 0 : Math.round(total * DEPOSIT_RATE);
   const couple = coupleOf(user.id);
   const partnerId = partnerOf(couple, user.id);
   const matches = all<{ id: number; name: string }>(
@@ -47,7 +52,7 @@ export default async function ParkBook({ searchParams }: { searchParams: SP }) {
                 <div className="label">{t(PRODUCT_KIND_LABEL[k])}</div>
                 <div className="flex flex-wrap gap-2">
                   {PARK_PRODUCTS.filter((p) => p.kind === k).map((p) => (
-                    <Link key={p.id} href={`/park/reservar?${new URLSearchParams({ p: p.id, d: date, ...(sp(q.partner) ? { partner: sp(q.partner)! } : {}) })}`}
+                    <Link key={p.id} href={`/park/reservar?${new URLSearchParams({ p: p.id, d: date, ...(sp(q.partner) ? { partner: sp(q.partner)! } : {}), ...(vcode ? { v: vcode } : {}) })}`}
                       className={p.id === product.id ? "chip-brand px-3 py-1 text-sm" : "chip px-3 py-1 text-sm hover:text-glow"}>
                       {t(p.name)} · {clp(p.price)}
                     </Link>
@@ -132,14 +137,23 @@ export default async function ParkBook({ searchParams }: { searchParams: SP }) {
                 <label className="label" htmlFor="notes">{t("Peticiones especiales")}</label>
                 <textarea className="input" id="notes" name="notes" maxLength={400} placeholder={t("Alergias, sorpresa, música…")} />
               </div>
+              <div>
+                <label className="label" htmlFor="voucher">{t("Código de regalo (opcional)")}</label>
+                <input className="input font-mono uppercase" id="voucher" name="voucher" maxLength={20} defaultValue={vcode} placeholder="TLG-XXXXXXXX" />
+                {vcode && !voucher && <p className="mt-1 text-xs text-rose">{t("Código de regalo no válido o caducado.")}</p>}
+                {voucher && !gifted && <p className="mt-1 text-xs text-rose">{t("Este regalo es para «{product}».", { product: t(productById(voucher.product)?.name ?? "") })}</p>}
+                {gifted && <p className="mt-1 text-xs text-ok">🎁 {t("Regalo para {name}: cubre la experiencia completa.", { name: voucher.recipient_name })}</p>}
+              </div>
               <div className="space-y-1 border-t border-line pt-3 text-sm">
                 <div className="flex justify-between"><span className="text-muted">{t("Precio")}</span><span>{clp(product.price)}</span></div>
                 {discount > 0 && <div className="flex justify-between text-ok"><span>{source === "club" ? t("Descuento Two Love Club") : t("Descuento de tu membresía")} ({Math.round(rate * 100)} %)</span><span>−{clp(discount)}</span></div>}
                 <div className="flex justify-between font-semibold"><span>{t("Total")}</span><span>{clp(total)}</span></div>
-                <div className="flex justify-between text-glow"><span>{t("Anticipo hoy (30 %)")}</span><span>{clp(deposit)} ≈ {money(clpToFils(deposit))}</span></div>
+                {gifted
+                  ? <div className="flex justify-between text-ok"><span>{t("Pagado con tarjeta regalo")}</span><span>−{clp(total)}</span></div>
+                  : <div className="flex justify-between text-glow"><span>{t("Anticipo hoy (30 %)")}</span><span>{clp(deposit)} ≈ {money(clpToFils(deposit, clpPerAed()))}</span></div>}
               </div>
               <p className="text-xs text-muted">{t("Saldo: {amount}. Cancelación gratuita hasta {h} h antes.", { amount: money(walletBalance(user.id).balance), h: CANCEL_FREE_HOURS })}</p>
-              <button className="btn-brand w-full" type="submit" disabled={slots.every((s) => s.left <= 0)}>{t("Reservar y pagar anticipo")}</button>
+              <button className="btn-brand w-full" type="submit" disabled={slots.every((s) => s.left <= 0)}>{gifted ? t("Reservar con mi regalo") : t("Reservar y pagar anticipo")}</button>
             </form>
           </aside>
         </div>

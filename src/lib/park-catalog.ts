@@ -3,7 +3,7 @@
 // opera en AED: los cobros del Park se convierten con CLP_PER_AED.
 
 export const PARK_CURRENCY = "CLP";
-export const CLP_PER_AED = 255; // tipo de cambio de referencia (configurable)
+export const CLP_PER_AED = 255; // tipo de cambio por defecto; se ajusta en /admin/ajustes (settings.clp_per_aed)
 export const CHILE_VAT = 0.19;
 export const DEPOSIT_RATE = 0.3; // anticipo del 30 % en cada reserva
 export const CANCEL_FREE_HOURS = 48; // cancelación con devolución del anticipo
@@ -11,9 +11,12 @@ export const OPEN_HOUR = 11;
 export const CLOSE_HOUR = 22;
 export const MINORS_UNTIL_HOUR = 19; // 14–17 años: solo de día, sin alcohol
 export const ALBUM_DAYS = 30; // vigencia del álbum de fotos por QR
+export const VOUCHER_MONTHS = 12; // vigencia de las tarjetas regalo
 
-/** CLP → fils (AED × 100) para la billetera del ecosistema. */
-export const clpToFils = (clp: number) => Math.round((clp / CLP_PER_AED) * 100);
+/** CLP → fils (AED × 100) para la billetera del ecosistema, al tipo indicado (CLP por AED). */
+export const clpToFils = (clp: number, rate = CLP_PER_AED) => Math.round((clp / rate) * 100);
+/** fils → CLP al tipo indicado. */
+export const filsToClp = (fils: number, rate = CLP_PER_AED) => Math.round((fils / 100) * rate);
 /** Separa el IVA chileno de un precio con IVA incluido. */
 export const splitVat = (gross: number) => {
   const net = Math.round(gross / (1 + CHILE_VAT));
@@ -188,3 +191,16 @@ export function hoursUntil(slot: string, now = new Date(), timeZone = PARK_TZ) {
 
 /** Suma días a una fecha YYYY-MM-DD. */
 export const addDays = (date: string, n: number) => new Date(Date.parse(`${date}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+
+// ── Encuesta de validación (hipótesis del plan: 300 parejas antes de firmar el arriendo) ──
+export const SURVEY = {
+  target: 300,
+  threshold: 0.6, // hipótesis validada si ≥ 60 % pagaría la Cita Completa (sí o quizás)
+  ages: ["14 a 17 años", "18 a 30 años", "30 a 55 años", "60 años o más"],
+  together: ["Menos de 6 meses", "6 meses a 2 años", "2 a 5 años", "Más de 5 años"],
+  frequency: ["1 al mes o menos", "2 a 3 al mes", "4 o más al mes"],
+  spend: ["Menos de CLP 15.000", "CLP 15.000 a 30.000", "CLP 30.000 a 50.000", "Más de CLP 50.000"],
+  answers: ["Sí", "Quizás", "No"],
+  dates: ["cumplemes", "dia100", "aniversario", "cumpleanos", "pedida"],
+};
+export const SURVEY_SEGMENT = ["teen", "young", "adult", "senior"]; // mismo orden que SURVEY.ages
