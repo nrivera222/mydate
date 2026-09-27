@@ -4,25 +4,31 @@ import { one, transaction } from "@/lib/db";
 import { getT } from "@/lib/i18n";
 import { clp } from "@/lib/money";
 import { tierById } from "@/lib/catalog";
-import { CLUB, PASSPORT_REWARD_CLP, STAMPS, daysTogether, milestones, productById } from "@/lib/park-catalog";
+import { venueNow, CLUB, PASSPORT_REWARD_CLP, STAMPS, daysTogether, milestones, productById } from "@/lib/park-catalog";
 import { clubStatus, coupleOf, remindMilestones, stampsOf } from "@/lib/park";
-import { cancelClub, createCouple, endCouple, joinClub, joinCouple } from "../../actions/park";
+import { cancelClub, createCouple, endCouple, joinClub, joinCouple, upgradeToPrivate } from "../../actions/park";
+import { submitIdentity } from "../../actions/verification";
 import { Flash, PageHeader, sp, type SP } from "@/components/ui";
 import { ParkNav } from "@/components/ParkNav";
 
 export default async function Passport({ searchParams }: { searchParams: SP }) {
   const t = await getT();
-  const user = await requireUser();
+  const user = await requireUser({ park: true });
   const q = await searchParams;
   transaction((conn) => remindMilestones(conn, user.id));
   const couple = coupleOf(user.id);
   const stamps = new Map(stampsOf(user.id).map((s) => [s.stamp, s.created_at]));
   const rewarded = !!one("SELECT 1 FROM wallet_tx WHERE ref = ?", `park_passport:${user.id}`);
   const club = clubStatus(user.id, user.tier);
-  const days = couple ? daysTogether(couple.since) : 0;
-  const next = couple ? milestones(couple.since).slice(0, 4) : [];
+  const days = couple ? daysTogether(couple.since, new Date(`${venueNow().date}T12:00:00Z`)) : 0;
+  const next = couple ? milestones(couple.since, new Date(`${venueNow().date}T12:00:00Z`)).slice(0, 4) : [];
   const partnerLabel = couple ? couple.partner ?? (couple.partner_name || t("tu pareja")) : "";
-  const today = new Date().toISOString().slice(0, 10);
+  const today = venueNow().date;
+  // Cuentas "solo Park": verificación de identidad (reservas de tutor) y paso a TWO LOVE Private a los 21
+  const parkOnly = user.scope === "park";
+  const identity = parkOnly ? one<{ status: string; notes: string | null }>("SELECT status, notes FROM verifications WHERE user_id = ? AND type = 'identity' ORDER BY id DESC LIMIT 1", user.id) : undefined;
+  const birthYear = parkOnly ? one<{ y: number | null }>("SELECT birth_year AS y FROM profiles WHERE user_id = ?", user.id)?.y ?? null : null;
+  const canUpgrade = !!birthYear && birthYear <= new Date().getFullYear() - 21;
 
   return (
     <div>
@@ -131,6 +137,55 @@ export default async function Passport({ searchParams }: { searchParams: SP }) {
         )}
         <p className="mt-4 text-xs text-muted">{t("Las fechas de pareja solo se usan para tus recordatorios, con tu consentimiento. Puedes cerrar el contador cuando quieras.")}</p>
       </section>
+
+      {parkOnly && (
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <section id="identidad" className="card space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="h2">{t("Identidad")}</h2>
+              <span className={identity?.status === "approved" ? "chip-brand" : "chip"}>
+                {identity ? t(identity.status) : t("Pendiente de enviar")}
+              </span>
+            </div>
+            <p className="text-sm text-muted">{t("Necesaria para reservar como tutor de una pareja de 14 a 17 años. El documento se guarda cifrado y solo lo ve nuestro equipo.")}</p>
+            {identity?.status === "rejected" && identity.notes && <p className="text-sm text-rose">{t("Motivo: {reason}", { reason: identity.notes })}</p>}
+            {identity?.status !== "approved" && identity?.status !== "pending" && (
+              <form action={submitIdentity} className="space-y-3">
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="label" htmlFor="doc_type">{t("Documento")}</label>
+                    <select className="input" id="doc_type" name="doc_type"><option value="DNI / ID nacional">{t("DNI / ID nacional")}</option><option value="Pasaporte">{t("Pasaporte")}</option></select>
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="doc_country">{t("País emisor")}</label>
+                    <input className="input" id="doc_country" name="doc_country" defaultValue="Chile" required />
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="doc_last4">{t("Últimos 4 dígitos")}</label>
+                    <input className="input" id="doc_last4" name="doc_last4" inputMode="numeric" maxLength={4} required />
+                  </div>
+                </div>
+                <div>
+                  <label className="label" htmlFor="document">{t("Foto del documento (JPG/PNG/PDF)")}</label>
+                  <input className="input" id="document" name="document" type="file" accept="image/*,application/pdf" required />
+                </div>
+                <div>
+                  <label className="label" htmlFor="selfie">{t("Selfie sosteniendo el documento")}</label>
+                  <input className="input" id="selfie" name="selfie" type="file" accept="image/*" required />
+                </div>
+                <button className="btn-ghost" type="submit">{t("Enviar identidad")}</button>
+              </form>
+            )}
+          </section>
+          <section className="card space-y-3">
+            <h2 className="h2">{t("TWO LOVE Private")}</h2>
+            <p className="text-sm text-muted">{t("Tu cuenta es solo para TWO LOVE Park. Las citas verificadas de alto perfil, el acompañamiento social, las Salas y los eventos privados son para mayores de 21 años.")}</p>
+            {canUpgrade
+              ? <form action={upgradeToPrivate}><button className="btn-brand" type="submit">{t("Activar TWO LOVE Private")}</button></form>
+              : <p className="text-sm text-glow">{t("Podrás activarlo al cumplir 21 años, con la misma cuenta y billetera.")}</p>}
+          </section>
+        </div>
+      )}
     </div>
   );
 }

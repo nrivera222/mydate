@@ -28,7 +28,9 @@ function insertVerification(userId: number, type: string, data: object, filePath
 }
 
 export async function submitIdentity(fd: FormData) {
-  const user = await requireUser();
+  // Las cuentas "solo Park" envían solo la identidad (necesaria para reservas de tutor)
+  const user = await requireUser({ park: true });
+  const BACK = user.scope === "park" ? "/park/pasaporte#identidad" : "/verificacion";
   const docType = str(fd, "doc_type", 40);
   const country = str(fd, "doc_country", 60);
   const last4 = str(fd, "doc_last4", 4).replace(/\D/g, "");

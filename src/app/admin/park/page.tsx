@@ -3,7 +3,7 @@ import { all, one } from "@/lib/db";
 import { getT } from "@/lib/i18n";
 import { clp, clpM, pct } from "@/lib/money";
 import { STREAM_LABEL } from "@/lib/catalog";
-import { BASE_CASE, CLP_PER_AED, CLUB, PARK_STREAMS, ROADMAP, SEGMENTS, productById } from "@/lib/park-catalog";
+import { addDays, venueNow, BASE_CASE, CLP_PER_AED, CLUB, PARK_STREAMS, ROADMAP, SEGMENTS, productById } from "@/lib/park-catalog";
 import { pilotVenue, type ParkBooking } from "@/lib/park";
 import { parkCancelAdmin, parkCheckIn, parkComplete, parkNoShow, parkPhotos, parkSale } from "../../actions/park";
 import { Bars, Columns, Empty, Flash, PageHeader, sp, Stat, type SP } from "@/components/ui";
@@ -60,9 +60,10 @@ export default async function AdminPark({ searchParams }: { searchParams: SP }) 
   );
   const segTotal = Math.max(1, segRows.reduce((a, r) => a + r.n, 0));
 
+  const today = venueNow().date; // agenda en la fecha del local
   const agenda = all<ParkBooking & { name: string; photos: number }>(
     `SELECT b.*, u.name, (SELECT COUNT(*) FROM park_photos f WHERE f.booking_id = b.id) AS photos FROM park_bookings b JOIN users u ON u.id = b.user_id
-     WHERE b.venue_id = ? AND (date(b.slot_at) BETWEEN date('now') AND date('now', '+2 days') OR b.status = 'en_curso') ORDER BY b.slot_at`, venue.id,
+     WHERE b.venue_id = ? AND (substr(b.slot_at, 1, 10) BETWEEN ? AND ? OR b.status = 'en_curso') ORDER BY b.slot_at`, venue.id, today, addDays(today, 2),
   );
   const machines = all<{ id: number; kind: string; name: string; units: number; investment: number; payback_months: number; sold: number }>(
     `SELECT m.*, COALESCE((SELECT SUM(amount) FROM park_sales s WHERE s.machine_id = m.id), 0) AS sold FROM park_machines m WHERE m.venue_id = ? ORDER BY m.kind DESC, m.investment DESC`, venue.id,

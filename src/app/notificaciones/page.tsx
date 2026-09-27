@@ -7,7 +7,7 @@ import { getT } from "@/lib/i18n";
 
 export default async function Notifications() {
   const t = await getT();
-  const user = await requireUser();
+  const user = await requireUser({ park: true });
   const rows = all<{ id: number; kind: string; title: string; body: string; href: string; read_at: string | null; created_at: string }>(
     "SELECT * FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 100", user.id,
   );

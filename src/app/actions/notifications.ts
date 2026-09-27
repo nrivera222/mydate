@@ -7,7 +7,7 @@ import { one, run } from "@/lib/db";
 import { int } from "@/lib/flash";
 
 export async function markAllRead() {
-  const user = await requireUser();
+  const user = await requireUser({ park: true });
   run("UPDATE notifications SET read_at = datetime('now') WHERE user_id = ? AND read_at IS NULL", user.id);
   revalidatePath("/", "layout");
   redirect("/notificaciones");
@@ -15,7 +15,7 @@ export async function markAllRead() {
 
 /** Marca como leída y navega a su destino. */
 export async function openNotification(fd: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ park: true });
   const n = one<{ href: string }>("SELECT href FROM notifications WHERE id = ? AND user_id = ?", int(fd, "id"), user.id);
   run("UPDATE notifications SET read_at = COALESCE(read_at, datetime('now')) WHERE id = ? AND user_id = ?", int(fd, "id"), user.id);
   revalidatePath("/", "layout");

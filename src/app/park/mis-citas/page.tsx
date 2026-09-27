@@ -14,7 +14,7 @@ const STATUS = { reservada: "Reservada", en_curso: "En curso", completada: "Comp
 
 export default async function MyParkDates({ searchParams }: { searchParams: SP }) {
   const t = await getT();
-  const user = await requireUser();
+  const user = await requireUser({ park: true });
   const q = await searchParams;
   const rows = all<ParkBooking & { owner: string; venue: string; photos: number }>(
     `SELECT b.*, u.name AS owner, v.name AS venue, (SELECT COUNT(*) FROM park_photos f WHERE f.booking_id = b.id) AS photos

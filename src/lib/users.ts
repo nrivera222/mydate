@@ -66,7 +66,8 @@ export function verificationStatus(userId: number) {
 export function isFullyVerified(userId: number) {
   const r = one<{ n: number }>(
     `SELECT COUNT(DISTINCT type) AS n FROM verifications v
-     WHERE user_id = ? AND status = 'approved' AND id = (SELECT MAX(id) FROM verifications WHERE user_id = v.user_id AND type = v.type)`,
+     WHERE user_id = ? AND status = 'approved' AND id = (SELECT MAX(id) FROM verifications WHERE user_id = v.user_id AND type = v.type)
+       AND user_id IN (SELECT id FROM users WHERE scope = 'full')`,
     userId,
   );
   return (r?.n ?? 0) === VERIFICATION_TYPES.length;

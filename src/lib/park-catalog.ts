@@ -165,3 +165,26 @@ export function milestones(since: string, today = new Date()): Milestone[] {
 }
 export const daysTogether = (since: string, today = new Date()) =>
   Math.floor((new Date(`${iso(today)}T00:00:00Z`).getTime() - new Date(`${since}T00:00:00Z`).getTime()) / DAY);
+
+// ── Hora del local ───────────────────────────────────────────────────────────
+// Las franjas se guardan en hora local del local ("YYYY-MM-DD HH:MM:SS"), no en UTC.
+export const PARK_TZ = "America/Santiago";
+
+/** Fecha y hora actuales en el local, en el mismo formato que las franjas. */
+export function venueNow(now = new Date(), timeZone = PARK_TZ) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" })
+      .formatToParts(now).map((p) => [p.type, p.value]),
+  );
+  const date = `${parts.year}-${parts.month}-${parts.day}`;
+  return { date, hour: Number(parts.hour), stamp: `${date} ${parts.hour}:${parts.minute}:${parts.second}` };
+}
+
+/** Horas que faltan para una franja en hora local (negativo si ya pasó). */
+export function hoursUntil(slot: string, now = new Date(), timeZone = PARK_TZ) {
+  const asUtc = (s: string) => Date.parse(`${s.replace(" ", "T")}Z`);
+  return (asUtc(slot) - asUtc(venueNow(now, timeZone).stamp)) / 3_600_000;
+}
+
+/** Suma días a una fecha YYYY-MM-DD. */
+export const addDays = (date: string, n: number) => new Date(Date.parse(`${date}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);

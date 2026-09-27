@@ -18,7 +18,7 @@ const TX_LABEL: Record<string, string> = {
 
 export default async function Wallet({ searchParams }: { searchParams: SP }) {
   const t = await getT();
-  const user = await requireUser();
+  const user = await requireUser({ park: true });
   const q = await searchParams;
   const cur = FX[sp(q.cur) ?? ""] ? sp(q.cur)! : "AED";
   const w = walletBalance(user.id);

@@ -29,7 +29,7 @@ class BusinessError extends Error {}
 // ── Billetera ────────────────────────────────────────────────────────────────
 
 export async function topUp(fd: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ park: true });
   const amount = toFils(Number(fd.get("amount")));
   const method = str(fd, "method") || "tarjeta";
   if (!(amount >= 50_00 && amount <= 500_000_00)) flash("/billetera", "El importe debe estar entre 50 y 500.000 AED.", "error");
@@ -51,7 +51,7 @@ export async function topUp(fd: FormData) {
 }
 
 export async function withdraw(fd: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ park: true });
   const amount = toFils(Number(fd.get("amount")));
   const iban = str(fd, "iban", 40).replace(/\s/g, "");
   if (amount < 100_00) flash("/billetera", "El retiro mínimo es 100 AED.", "error");

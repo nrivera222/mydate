@@ -56,6 +56,15 @@ const MEMBER_NAV = [
   ["/concierge", "Concierge"],
 ];
 
+// Cuentas "solo Park" (18+): el parque de citas, billetera y avisos
+const PARK_NAV = [
+  ["/park", "TWO LOVE Park"],
+  ["/park/reservar", "Reservar"],
+  ["/park/mis-citas", "Mis citas"],
+  ["/park/pasaporte", "Pasaporte y pareja"],
+  ["/billetera", "Billetera"],
+];
+
 const ADMIN_NAV = [
   ["/admin", "Resumen"],
   ["/admin/verificaciones", "Verificaciones"],
@@ -69,7 +78,8 @@ const ADMIN_NAV = [
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const t = await getT();
   const user = await currentUser();
-  const nav = user?.role === "admin" ? ADMIN_NAV : MEMBER_NAV;
+  const nav = user?.role === "admin" ? ADMIN_NAV : user?.scope === "park" ? PARK_NAV : MEMBER_NAV;
+  const home = user ? (user.role === "admin" ? "/admin" : user.scope === "park" ? "/park" : "/descubrir") : "/";
   const wallet = user && user.role !== "admin" ? walletBalance(user.id) : null;
   const unread = user ? one<{ n: number }>("SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND read_at IS NULL", user.id)!.n : 0;
 
@@ -83,7 +93,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-screen">
         <header className="sticky top-0 z-30 border-b border-line bg-ink/90 backdrop-blur">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
-            <Link href={user ? (user.role === "admin" ? "/admin" : "/descubrir") : "/"} className="brand whitespace-nowrap font-display text-xl tracking-[0.15em] md:text-2xl md:tracking-[0.2em]">
+            <Link href={home} className="brand whitespace-nowrap font-display text-xl tracking-[0.15em] md:text-2xl md:tracking-[0.2em]">
               <span className="inline-flex items-center gap-2.5" dir="ltr"><LogoMark size={36} />{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/brand/logo/two-love-wordmark.svg" alt="TWO LOVE" className="h-4 w-auto md:h-5" /></span>
             </Link>
             {user ? (
@@ -100,10 +110,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     <span className="absolute -end-2 -top-1 min-w-4 rounded-full bg-rose px-1 text-center text-[10px] font-semibold leading-4 text-ink">{unread > 9 ? "9+" : unread}</span>
                   )}
                 </Link>
-                <TierBadge tier={user.tier} />
-                {user.role !== "admin" && (
-                  <Link href="/perfil/editar" className="text-muted hover:text-glow">{user.name.split(" ")[0]}</Link>
-                )}
+                {user.scope === "park" ? <span className="chip-brand">Park</span> : <TierBadge tier={user.tier} />}
+                {user.role !== "admin" && (user.scope === "park"
+                  ? <span className="text-muted">{user.name.split(" ")[0]}</span>
+                  : <Link href="/perfil/editar" className="text-muted hover:text-glow">{user.name.split(" ")[0]}</Link>)}
                 <form action={logout}>
                   <button className="text-muted hover:text-rose" type="submit">{t("Salir")}</button>
                 </form>
@@ -123,7 +133,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   {t(label)}
                 </Link>
               ))}
-              {user.role !== "admin" && (
+              {user.role !== "admin" && user.scope !== "park" && (
                 <Link href="/verificacion" className="whitespace-nowrap rounded-full px-3 py-1.5 text-muted hover:bg-ink-3 hover:text-glow">{t("Verificación")}</Link>
               )}
             </nav>

@@ -4,7 +4,7 @@ import { all } from "@/lib/db";
 import { getT } from "@/lib/i18n";
 import { clp, money } from "@/lib/money";
 import { walletBalance } from "@/lib/users";
-import { CANCEL_FREE_HOURS, DEPOSIT_RATE, DESTINATIONS, PARK_PRODUCTS, PRODUCT_KIND_LABEL, clpToFils, productById, stampById, type ParkProductKind } from "@/lib/park-catalog";
+import { hoursUntil, venueNow, CANCEL_FREE_HOURS, DEPOSIT_RATE, DESTINATIONS, PARK_PRODUCTS, PRODUCT_KIND_LABEL, clpToFils, productById, stampById, type ParkProductKind } from "@/lib/park-catalog";
 import { coupleOf, parkDiscount, partnerOf, pilotVenue, slotsFor } from "@/lib/park";
 import { bookPark } from "../../actions/park";
 import { Empty, Flash, PageHeader, sp, type SP } from "@/components/ui";
@@ -12,15 +12,15 @@ import { ParkNav } from "@/components/ParkNav";
 
 export default async function ParkBook({ searchParams }: { searchParams: SP }) {
   const t = await getT();
-  const user = await requireUser();
+  const user = await requireUser({ park: true });
   const q = await searchParams;
   const venue = pilotVenue();
   const product = productById(sp(q.p) ?? "") ?? PARK_PRODUCTS[1];
   const minor = sp(q.minor) === "1" && product.minors;
-  const today = new Date().toISOString().slice(0, 10);
+  // Fechas y horas en la zona horaria del local (Santiago), no la del servidor
+  const today = venueNow().date;
   const date = /^\d{4}-\d{2}-\d{2}$/.test(sp(q.d) ?? "") && sp(q.d)! >= today ? sp(q.d)! : today;
-  const now = new Date();
-  const slots = venue ? slotsFor(venue.id, product, date, minor).filter((s) => date > today || s.hour > now.getHours() + 1) : [];
+  const slots = venue ? slotsFor(venue.id, product, date, minor).filter((s) => hoursUntil(`${date} ${String(s.hour).padStart(2, "0")}:00:00`) > 1) : [];
   const { rate, source } = parkDiscount(user.id, user.tier);
   const discount = Math.round(product.price * rate);
   const total = product.price - discount;

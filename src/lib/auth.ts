@@ -22,6 +22,8 @@ export type SessionUser = {
   role: "user" | "admin";
   tier: string;
   status: string;
+  /** full = ecosistema completo (21+) · park = solo TWO LOVE Park (18+) */
+  scope: "full" | "park";
 };
 
 export async function createSession(userId: number) {
@@ -49,7 +51,7 @@ export async function currentUser(): Promise<SessionUser | null> {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secret());
-    const user = one<SessionUser>("SELECT id, email, name, role, tier, status FROM users WHERE id = ?", Number(payload.sub));
+    const user = one<SessionUser>("SELECT id, email, name, role, tier, status, scope FROM users WHERE id = ?", Number(payload.sub));
     if (!user || user.status !== "active") return null;
     return user;
   } catch {
@@ -57,9 +59,14 @@ export async function currentUser(): Promise<SessionUser | null> {
   }
 }
 
-export async function requireUser(): Promise<SessionUser> {
+/**
+ * Exige sesión. Las cuentas "solo Park" (18–20 años o registro desde el Park) solo acceden a lo que
+ * lo permite explícitamente con { park: true }: el resto del ecosistema es para mayores de 21.
+ */
+export async function requireUser(opts: { park?: boolean } = {}): Promise<SessionUser> {
   const user = await currentUser();
   if (!user) redirect("/entrar");
+  if (user.scope === "park" && !opts.park) redirect("/park");
   run("UPDATE users SET last_active_at = datetime('now') WHERE id = ?", user.id);
   return user;
 }

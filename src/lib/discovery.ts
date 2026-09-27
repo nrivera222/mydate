@@ -8,6 +8,7 @@ export function fullyVerifiedIds(): Set<number> {
   const rows = all<{ user_id: number }>(
     `SELECT user_id FROM verifications v
      WHERE status = 'approved' AND id = (SELECT MAX(id) FROM verifications WHERE user_id = v.user_id AND type = v.type)
+       AND user_id IN (SELECT id FROM users WHERE scope = 'full') -- las cuentas "solo Park" nunca aparecen en citas ni acompañamiento
      GROUP BY user_id HAVING COUNT(DISTINCT type) = ?`,
     VERIFICATION_TYPES.length,
   );

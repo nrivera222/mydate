@@ -22,6 +22,7 @@ La primera petición crea `data/twolove.db` y la llena con datos de demostració
 | Miembro Platinum (verificado, con matches y saldo) | `demo@twolove.app` | `twolove2026` |
 | Administración (CRM / ERP / verificaciones) | `admin@twolove.app` | `twolove2026` |
 | Miembro pendiente de verificar | `nuevo@demo.twolove.app` | `twolove2026` |
+| Cuenta solo TWO LOVE Park (19 años, en pareja) | `catalina@park.twolove.app` | `twolove2026` |
 
 Producción:
 
@@ -60,7 +61,7 @@ La interfaz está disponible en **español, inglés y árabe** (con dirección R
 
 - Las traducciones viven en `src/lib/i18n/en.ts` y `src/lib/i18n/ar.ts`; la clave es el texto original en español (`t("Guardar perfil")`).
 - Los avisos de las acciones y las notificaciones guardadas se traducen al mostrarse, reconociendo partes variables (`"Recarga de {a} completada."`) y reformateando importes al idioma activo.
-- `npm run i18n:check` verifica que todo texto de la interfaz, del catálogo y del contenido sembrado tiene traducción en ambos idiomas (1.408 claves).
+- `npm run i18n:check` verifica que todo texto de la interfaz, del catálogo y del contenido sembrado tiene traducción en ambos idiomas (1.436 claves).
 - El contenido que escribe cada miembro (biografía, ocupación, mensajes) no se traduce.
 
 ## Qué incluye
@@ -97,6 +98,10 @@ Segundo mundo del ecosistema, basado en el plan para inversionistas: un local f�
 | Pasaporte y pareja | `/park/pasaporte` | 6 sellos (viaje, cine, recrea, misterio, cabina, taller) con Cita Clásica de regalo al completarlo; contador de días de pololeo compartido por código, próximos hitos y avisos 7 días antes; Two Love Club (CLP 7.900/mes, 10 % de descuento, incluido en Diamond y Royal Black). |
 | Álbum por QR | `/park/album/[token]` | Fotos de cabina cifradas en disco, accesibles con el enlace durante 30 días y solo si la pareja dio su consentimiento. |
 | Operación del local | `/admin/park` | Agenda (check-in con cobro del saldo, completar y sellar, no presentados, cancelación con devolución, subida de fotos), caja por línea de ingreso con parejas sin reserva, parejas e ingresos por mes, EBITDA estimado, **regla de decisión del mes 6** (umbral de 900 parejas), ingresos frente al caso base, socios del Club y recompra a 60 días, mezcla de segmentos, recuperación de la inversión de cada máquina y cabina y hoja de ruta. |
+
+**Cuentas solo Park (18+).** El Park tiene su propio alta en `/park/registro` desde los 18 años. Estas cuentas solo acceden al Park, la billetera y las notificaciones: `requireUser()` las devuelve a `/park` en cualquier otra ruta salvo que la página lo permita con `requireUser({ park: true })`. Nunca aparecen en Descubrir ni en acompañamiento, pueden verificar su identidad desde el pasaporte (necesaria para reservar como tutor) y, al cumplir 21, activan TWO LOVE Private con la misma cuenta y billetera. En el CRM figuran como «Cliente Park».
+
+**Hora del local.** Las franjas se guardan en hora de Santiago (`PARK_TZ = "America/Santiago"`) y todas las comprobaciones (horarios disponibles, antelación, cancelación gratuita, agenda, hitos) usan `venueNow()`/`hoursUntil()`, sea cual sea la zona horaria del servidor.
 
 Integración: las 8 líneas de ingreso del Park aparecen en el ERP, la ficha 360° del CRM muestra reservas, sellos, Club y pareja, los perfiles de match ofrecen «Invitar a una cita en TWO LOVE Park» y las membresías dan descuento en el Park.
 

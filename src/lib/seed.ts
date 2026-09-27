@@ -322,6 +322,6 @@ export function seed(conn: DatabaseSync) {
   nIns.run(pendingId, "sistema", "Bienvenido/a a TWO LOVE", "Completa tus 5 verificaciones para empezar a conectar.", "/verificacion", daysAgo(1));
 
   // TWO LOVE Park: local piloto en Santiago con 5 meses de historial
-  seedParkDemo(conn, { r, demoId, partnerId: men[0]?.user_id ?? null, ids });
-  nIns.run(demoId, "reserva", "Día 100 en 3 días 💞", "Celebradlo en TWO LOVE Park con el paquete Día 100.", "/park/pasaporte", daysAgo(0, 9));
+  seedParkDemo(conn, { r, demoId, partnerId: men[0]?.user_id ?? null, ids, hash });
+  nIns.run(demoId, "reserva", "Día 100: en 3 días 💞", "Celebradlo en TWO LOVE Park con un paquete especial.", "/park/pasaporte", daysAgo(0, 9));
 }

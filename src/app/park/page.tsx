@@ -29,7 +29,7 @@ export default async function ParkHome() {
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link href="/park/reservar" className="btn-brand">{t("Reservar una cita")}</Link>
-          <Link href={user ? "/park/pasaporte" : "/registro"} className="btn-ghost">{user ? t("Mi pasaporte del amor") : t("Crear cuenta")}</Link>
+          <Link href={user ? "/park/pasaporte" : "/park/registro"} className="btn-ghost">{user ? t("Mi pasaporte del amor") : t("Crear cuenta (18+)")}</Link>
         </div>
         <p className="mt-6 text-xs text-muted">{t("Una sola cuenta TWO LOVE: la misma billetera, notificaciones y membresía en Dubái y en el Park.")}</p>
       </section>

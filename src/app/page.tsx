@@ -10,7 +10,7 @@ import { getT } from "@/lib/i18n";
 export default async function Home() {
   const t = await getT();
   const user = await currentUser();
-  if (user) redirect(user.role === "admin" ? "/admin" : "/descubrir");
+  if (user) redirect(user.role === "admin" ? "/admin" : user.scope === "park" ? "/park" : "/descubrir");
 
   const stats = one<{ members: number; cities: number; lounges: number }>(
     "SELECT (SELECT COUNT(*) FROM users WHERE role = 'user') AS members, (SELECT COUNT(DISTINCT city) FROM profiles WHERE city != '') AS cities, (SELECT COUNT(*) FROM lounges) AS lounges",

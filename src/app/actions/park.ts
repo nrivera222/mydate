@@ -12,7 +12,7 @@ import { isBlockedBetween, isMatch } from "@/lib/users";
 import { clp } from "@/lib/money";
 import { saveUpload, UploadError } from "@/lib/uploads";
 import {
-  CANCEL_FREE_HOURS, CLUB, DEPOSIT_RATE, DESTINATIONS, PARK_STREAMS, PASSPORT_REWARD_CLP, STAMPS, clpToFils, productById, splitVat,
+  CANCEL_FREE_HOURS, CLUB, DEPOSIT_RATE, hoursUntil, DESTINATIONS, PARK_STREAMS, PASSPORT_REWARD_CLP, STAMPS, clpToFils, productById, splitVat,
 } from "@/lib/park-catalog";
 import { clubStatus, coupleOf, parkDiscount, partnerOf, pilotVenue, slotsFor, type ParkBooking } from "@/lib/park";
 
@@ -42,7 +42,7 @@ const isIdentityVerified = (userId: number) => !!one("SELECT 1 FROM verification
 // ── Reservas ─────────────────────────────────────────────────────────────────
 
 export async function bookPark(fd: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ park: true });
   const product = productById(str(fd, "product", 20));
   const back = `/park/reservar${product ? `?p=${product.id}` : ""}`;
   if (!product) flash("/park/reservar", "Elige una experiencia.", "error");
@@ -56,14 +56,15 @@ export async function bookPark(fd: FormData) {
   const minorNames = str(fd, "minor_names", 120);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) flash(back, "Elige una fecha.", "error");
   const slotAt = `${date} ${String(hour).padStart(2, "0")}:00:00`;
-  const when = new Date(`${date}T${String(hour).padStart(2, "0")}:00:00`).getTime();
-  if (!(when > Date.now() + 3_600_000)) flash(back, "Elige una fecha y hora futuras.", "error");
-  if (when > Date.now() + 90 * 86_400_000) flash(back, "Se puede reservar con hasta 90 días de antelación.", "error");
+  // Hora local del local (Santiago), independiente de la zona horaria del servidor
+  const ahead = hoursUntil(slotAt);
+  if (!(ahead > 1)) flash(back, "Elige una fecha y hora futuras.", "error");
+  if (ahead > 90 * 24) flash(back, "Se puede reservar con hasta 90 días de antelación.", "error");
 
   // Pareja de 14 a 17 años: reserva a cargo del tutor, de día, sin alcohol y con identidad verificada
   if (minor) {
     if (!product.minors) flash(back, "Esta experiencia no está disponible para menores de edad.", "error");
-    if (!isIdentityVerified(user.id)) flash("/verificacion", "Para reservar como tutor necesitas tu verificación de identidad aprobada.", "error");
+    if (!isIdentityVerified(user.id)) flash(user.scope === "park" ? "/park/pasaporte#identidad" : "/verificacion", "Para reservar como tutor necesitas tu verificación de identidad aprobada.", "error");
     if (minorNames.length < 3) flash(back, "Indica los nombres y edades de la pareja menor de edad.", "error");
     if (fd.get("guardian") !== "on") flash(back, "Debes aceptar la responsabilidad como tutor.", "error");
   }
@@ -107,10 +108,10 @@ function loadBooking(id: number) {
 }
 
 export async function cancelPark(fd: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ park: true });
   const b = loadBooking(int(fd, "booking"));
   if (!b || (b.user_id !== user.id) || b.status !== "reservada") flash("/park/mis-citas", "No se puede cancelar.", "error");
-  const refundable = new Date(b.slot_at.replace(" ", "T")).getTime() - Date.now() > CANCEL_FREE_HOURS * 3_600_000;
+  const refundable = hoursUntil(b.slot_at) > CANCEL_FREE_HOURS;
   const p = productById(b.product);
   const err = attempt((conn) => {
     conn.prepare("UPDATE park_bookings SET status = 'cancelada' WHERE id = ?").run(b.id);
@@ -128,7 +129,7 @@ export async function cancelPark(fd: FormData) {
 // ── Pareja y contador de días ────────────────────────────────────────────────
 
 export async function createCouple(fd: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ park: true });
   const since = str(fd, "since", 10);
   if (coupleOf(user.id)) flash("/park/pasaporte", "Ya tienes una pareja vinculada.", "error");
   const d = new Date(`${since}T00:00:00Z`).getTime();
@@ -142,7 +143,7 @@ export async function createCouple(fd: FormData) {
 }
 
 export async function joinCouple(fd: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ park: true });
   const code = str(fd, "code", 20).toUpperCase();
   if (coupleOf(user.id)) flash("/park/pasaporte", "Ya tienes una pareja vinculada.", "error");
   const c = one<{ id: number; user_a: number; user_b: number | null }>("SELECT id, user_a, user_b FROM park_couples WHERE code = ? AND status = 'activa'", code);
@@ -156,7 +157,7 @@ export async function joinCouple(fd: FormData) {
 }
 
 export async function endCouple() {
-  const user = await requireUser();
+  const user = await requireUser({ park: true });
   const c = coupleOf(user.id);
   if (!c) flash("/park/pasaporte", "No hay pareja vinculada.", "error");
   transaction((conn) => {
@@ -169,7 +170,7 @@ export async function endCouple() {
 // ── Two Love Club ────────────────────────────────────────────────────────────
 
 export async function joinClub() {
-  const user = await requireUser();
+  const user = await requireUser({ park: true });
   const status = clubStatus(user.id, user.tier);
   if (status.included) flash("/park/pasaporte", "Tu membresía TWO LOVE ya incluye el Club.", "error");
   if (status.active && !status.own) flash("/park/pasaporte", "Tu pareja ya tiene el Club activo: lo compartís.", "error");
@@ -189,7 +190,7 @@ export async function joinClub() {
 }
 
 export async function cancelClub() {
-  const user = await requireUser();
+  const user = await requireUser({ park: true });
   transaction((conn) => {
     conn.prepare("UPDATE park_club SET status = 'cancelada' WHERE user_id = ?").run(user.id);
   });
@@ -313,4 +314,20 @@ export async function parkPhotos(fd: FormData) {
   });
   revalidatePath(ADMIN_BACK);
   flash(ADMIN_BACK, `${paths.length} fotos añadidas al álbum.`);
+}
+
+// ── Paso de cuenta "solo Park" al ecosistema completo (21+) ─────────────────
+
+export async function upgradeToPrivate() {
+  const user = await requireUser({ park: true });
+  if (user.scope !== "park") flash("/descubrir", "Tu cuenta ya tiene acceso completo.");
+  const p = one<{ birth_year: number | null }>("SELECT birth_year FROM profiles WHERE user_id = ?", user.id);
+  if (!p?.birth_year || p.birth_year > new Date().getFullYear() - 21) flash("/park/pasaporte", "TWO LOVE Private es solo para mayores de 21 años.", "error");
+  transaction((conn) => {
+    conn.prepare("UPDATE users SET scope = 'full' WHERE id = ?").run(user.id);
+    conn.prepare("UPDATE profiles SET real_dating = 1 WHERE user_id = ?").run(user.id);
+    notify(conn, user.id, "sistema", "Bienvenido/a a TWO LOVE Private", "Completa tu perfil y tus 5 verificaciones para empezar a conectar.", "/verificacion");
+  });
+  revalidatePath("/", "layout");
+  flash("/perfil/editar", "¡Ya tienes acceso completo a TWO LOVE! Completa tu perfil para empezar.");
 }

@@ -85,14 +85,19 @@ park.DESTINATIONS.forEach((x) => add(x, "park"));
 park.CLUB.benefits.forEach((x) => add(x, "park"));
 for (const x of park.SEGMENTS) { add(x.range, "park"); add(x.note, "park"); }
 for (const x of park.ROADMAP) { add(x.when, "park"); add(x.name, "park"); add(x.desc, "park"); }
-["Día {n}", "Cumplemes {n}", "Aniversario {n}", "Hoy es vuestro hito en TWO LOVE Park 💞", "Se acerca un hito de pareja 💞"].forEach((x) => add(x, "park"));
+["Día {n}", "Cumplemes {n}", "Aniversario {n}"].forEach((x) => {
+  add(x, "park");
+  add(`${x}: ¡hoy! 💞`, "park");
+  add(`${x}: en {d} días 💞`, "park");
+});
+add("Celebradlo en TWO LOVE Park con un paquete especial.", "park");
 
 // Valores internos que se muestran traducidos (estados, tipos, canales, etapas del CRM)
 const ENUMS = ["requested", "accepted", "completed", "declined", "cancelled", "disputed", "companion", "lounge", "approved", "pending", "rejected",
   "nota", "llamada", "concierge", "incidencia", "pagado", "preparando", "entregado", "nuevo", "en_curso", "resuelto", "publicado", "cancelado",
   "organico", "instagram", "referido", "evento_privado", "alianza", "google", "interno",
   "Suspendido", "Lead · verificando", "En riesgo", "VIP", "Suscriptor", "Verificado · free",
-  "reservada", "completada", "cancelada", "no_show"];
+  "reservada", "completada", "cancelada", "no_show", "Cliente Park", "park"];
 ENUMS.forEach((x) => add(x, "enum"));
 
 // Contenido sembrado

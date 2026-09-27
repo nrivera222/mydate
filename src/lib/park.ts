@@ -4,7 +4,7 @@ import { all, one } from "./db";
 import { tierById } from "./catalog";
 import { notify } from "./notify";
 import {
-  ALBUM_DAYS, CLOSE_HOUR, CLUB, MINORS_UNTIL_HOUR, OPEN_HOUR, milestones, productById, type ParkProduct, type StampId,
+  ALBUM_DAYS, venueNow, CLOSE_HOUR, CLUB, MINORS_UNTIL_HOUR, OPEN_HOUR, milestones, type ParkProduct, type StampId,
 } from "./park-catalog";
 
 export type ParkBooking = {
@@ -66,13 +66,14 @@ export function remindMilestones(conn: DatabaseSync, userId: number) {
   const c = conn.prepare("SELECT id, user_a, user_b, since FROM park_couples WHERE status = 'activa' AND (user_a = ? OR user_b = ?) LIMIT 1").get(userId, userId) as
     | { id: number; user_a: number; user_b: number | null; since: string } | undefined;
   if (!c) return;
-  for (const m of milestones(c.since).filter((x) => x.days <= 7)) {
+  for (const m of milestones(c.since, new Date(`${venueNow().date}T12:00:00Z`)).filter((x) => x.days <= 7)) {
     const r = conn.prepare("INSERT OR IGNORE INTO park_reminders (couple_id, key) VALUES (?, ?)").run(c.id, `${m.key}:${m.date}`);
     if (!r.changes) continue;
-    const p = productById(m.product);
+    // Títulos con patrón traducible: "Día {n}: en {d} días 💞", "Cumplemes {n}: ¡hoy! 💞"…
+    const label = m.label.replace("{n}", String(m.n));
+    const title = m.days === 0 ? `${label}: ¡hoy! 💞` : `${label}: en ${m.days} días 💞`;
     for (const uid of [c.user_a, c.user_b]) {
-      notify(conn, uid, "reserva", m.days === 0 ? "Hoy es vuestro hito en TWO LOVE Park 💞" : "Se acerca un hito de pareja 💞",
-        `${m.label.replace("{n}", String(m.n))} · ${m.date}${p ? ` · ${p.name}` : ""}`, `/park/reservar?p=${m.product}`);
+      notify(conn, uid, "reserva", title, "Celebradlo en TWO LOVE Park con un paquete especial.", `/park/reservar?p=${m.product}&d=${m.date}`);
     }
   }
 }

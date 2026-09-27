@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
   tier_expires_at TEXT,
   status TEXT NOT NULL DEFAULT 'active',        -- active | suspended
   source TEXT NOT NULL DEFAULT 'organico',      -- canal de adquisición (CRM)
+  scope TEXT NOT NULL DEFAULT 'full',            -- full (ecosistema, 21+) | park (solo TWO LOVE Park, 18+)
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   last_active_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -435,6 +436,7 @@ function migrate(conn: DatabaseSync) {
     conn.exec("UPDATE users SET referral_code = 'TL' || upper(hex(randomblob(3))) WHERE referral_code IS NULL");
   }
   if (!users.includes("referred_by")) conn.exec("ALTER TABLE users ADD COLUMN referred_by INTEGER REFERENCES users(id)");
+  if (!users.includes("scope")) conn.exec("ALTER TABLE users ADD COLUMN scope TEXT NOT NULL DEFAULT 'full'"); // full | park
   conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_ref ON users(referral_code)");
 }
 

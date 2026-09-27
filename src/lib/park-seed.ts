@@ -1,8 +1,8 @@
 import "server-only";
 import type { DatabaseSync } from "node:sqlite";
 import crypto from "node:crypto";
-import { BASE_CASE, clpToFils, PARK_PRODUCTS, productById, splitVat } from "./park-catalog";
-import { recordRevenue } from "./ledger";
+import { addDays, venueNow, BASE_CASE, clpToFils, PARK_PRODUCTS, productById, splitVat } from "./park-catalog";
+import { post, recordRevenue } from "./ledger";
 
 const token = (n = 12) => crypto.randomBytes(n).toString("base64url");
 
@@ -31,13 +31,11 @@ export function seedParkReference(conn: DatabaseSync, opensOn = new Date().toISO
 }
 
 /** Historial de demostración: 5 meses de piloto, reservas, caja, club, parejas y pasaportes. */
-export function seedParkDemo(conn: DatabaseSync, o: { r: () => number; demoId: number; partnerId: number | null; ids: number[] }) {
-  const { r, demoId, partnerId, ids } = o;
-  const day = (d: number, h = 12, min = 0) => {
-    const dt = new Date(Date.now() - d * 86_400_000);
-    dt.setUTCHours(h, min, 0, 0);
-    return dt.toISOString().replace("T", " ").slice(0, 19);
-  };
+export function seedParkDemo(conn: DatabaseSync, o: { r: () => number; demoId: number; partnerId: number | null; ids: number[]; hash: string }) {
+  const { r, demoId, partnerId, ids, hash } = o;
+  // Franjas y fechas en hora local del local (Santiago)
+  const base = venueNow().date;
+  const day = (d: number, h = 12, min = 0) => `${addDays(base, -d)} ${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}:00`;
   const MONTHS = 5;
   const pilot = seedParkReference(conn, day(MONTHS * 30).slice(0, 10));
   const pick = <T,>(a: readonly T[]) => a[Math.floor(r() * a.length)];
@@ -118,7 +116,33 @@ export function seedParkDemo(conn: DatabaseSync, o: { r: () => number; demoId: n
   book(demoId, "completa", day(62, 19), "completada", both);
   book(demoId, "viaje", day(34, 20), "completada", { ...both, destination: "Seúl" });
   book(demoId, "cumplemes", day(6, 20), "completada", { ...both, discount: 4_500 });
-  book(demoId, "clasica", day(-((6 - new Date().getUTCDay() + 7) % 7 || 7), 20), "reservada", { ...both, discount: 2_290 });
+  const weekday = new Date(`${base}T12:00:00Z`).getUTCDay();
+  book(demoId, "clasica", day(-((6 - weekday + 7) % 7 || 7), 20), "reservada", { ...both, discount: 2_290 }); // próximo sábado
+
+  // Cuentas "solo Park" (18+) de Santiago: todos los segmentos de edad
+  const year = Number(base.slice(0, 4));
+  const PARK_PEOPLE: [string, string, number, number][] = [
+    ["Catalina Muñoz", "catalina@park.twolove.app", 19, 188], ["Benjamín Rojas", "benjamin@park.twolove.app", 20, 188],
+    ["Josefa Soto", "josefa@park.twolove.app", 24, 0], ["Tomás Pérez", "tomas@park.twolove.app", 27, 0],
+    ["Carolina Vega", "carolina@park.twolove.app", 41, 0], ["Rosa Fuentes", "rosa@park.twolove.app", 66, 0],
+  ];
+  const parkIds = PARK_PEOPLE.map(([name, email, age]) => {
+    const uid = Number(conn.prepare("INSERT INTO users (email, password_hash, name, source, scope, created_at, last_active_at) VALUES (?, ?, ?, 'park', 'park', ?, ?)")
+      .run(email, hash, name, day(140), day(1)).lastInsertRowid);
+    conn.prepare("INSERT INTO profiles (user_id, birth_year, city, country, real_dating, hue) VALUES (?, ?, 'Santiago', 'Chile', 0, ?)").run(uid, year - age, Math.floor(r() * 360));
+    conn.prepare("UPDATE users SET referral_code = 'TL' || upper(hex(randomblob(3))) WHERE id = ?").run(uid);
+    post(conn, uid, "recarga", clpToFils(150_000), "Recarga de saldo", "seed", day(120));
+    const n = 2 + Math.floor(r() * 4);
+    for (let k = 0; k < n; k++) {
+      const p = age >= 60 ? pick(["baile", "clasica", "aniversario"]) : age >= 30 ? pick(["ceramica", "cata", "completa", "aniversario"]) : pick(["clasica", "completa", "viaje", "cumplemes", "anillos"]);
+      book(uid, p, day(10 + Math.floor(r() * 120), 14 + Math.floor(r() * 7)), "completada", { partnerName: pick(["Martín", "Javiera", "Hernán", "Paula"]), destination: p === "viaje" ? pick(["París", "Seúl", "Tokio"]) : undefined });
+    }
+    return uid;
+  });
+  // Catalina y Benjamín: pareja vinculada (día 200 en unos días)
+  conn.prepare("INSERT INTO park_couples (user_a, user_b, partner_name, since, code, created_at) VALUES (?, ?, '', ?, ?, ?)")
+    .run(parkIds[0], parkIds[1], day(PARK_PEOPLE[0][3]).slice(0, 10), "TLP-" + token(4).toUpperCase().replace(/[^A-Z0-9]/g, "X"), day(150));
+  book(parkIds[0], "dia100", day(-4, 18), "reservada", { partnerId: parkIds[1] });
 
   // Two Love Club: el demo y una docena de parejas
   const club = conn.prepare("INSERT OR IGNORE INTO park_club (user_id, since, expires_at) VALUES (?, ?, ?)");

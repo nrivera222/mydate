@@ -10,7 +10,7 @@ import { getT } from "@/lib/i18n";
 
 type Row = {
   id: number; name: string; email: string; tier: string; status: string; source: string; created_at: string; last_active_at: string;
-  city: string; archetype: string; ltv: number; spend: number; balance: number;
+  city: string; archetype: string; ltv: number; spend: number; balance: number; scope: string;
 };
 
 export const dynamic = "force-dynamic";
@@ -18,6 +18,7 @@ export const dynamic = "force-dynamic";
 function stage(r: Row, verified: boolean) {
   const inactiveDays = (Date.now() - new Date(r.last_active_at.replace(" ", "T") + "Z").getTime()) / 86_400_000;
   if (r.status !== "active") return ["Suspendido", "chip border-rose/40 text-rose"] as const;
+  if (r.scope === "park") return ["Cliente Park", "chip border-magenta/40 text-magenta"] as const;
   if (!verified) return ["Lead · verificando", "chip border-sky-300/40 text-sky-200"] as const;
   if (inactiveDays > 14) return ["En riesgo", "chip border-rose/40 text-rose"] as const;
   if (tierById(r.tier).rank >= 3) return ["VIP", "chip-brand"] as const;
@@ -35,7 +36,7 @@ export default async function Crm({ searchParams }: { searchParams: SP }) {
   const verified = fullyVerifiedIds();
 
   const rows = all<Row>(
-    `SELECT u.id, u.name, u.email, u.tier, u.status, u.source, u.created_at, u.last_active_at, p.city, p.archetype,
+    `SELECT u.id, u.name, u.email, u.tier, u.status, u.source, u.scope, u.created_at, u.last_active_at, p.city, p.archetype,
        COALESCE((SELECT SUM(amount) FROM revenue r WHERE r.user_id = u.id), 0) AS ltv,
        COALESCE((SELECT -SUM(amount) FROM wallet_tx t WHERE t.user_id = u.id AND t.amount < 0), 0) AS spend,
        COALESCE((SELECT balance FROM wallets w WHERE w.user_id = u.id), 0) AS balance
