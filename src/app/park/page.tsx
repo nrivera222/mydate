@@ -6,6 +6,7 @@ import { clp } from "@/lib/money";
 import { tierById, TIERS } from "@/lib/catalog";
 import { CLUB, PARK_PRODUCTS, PARK_ZONES, SEGMENTS, STAMPS } from "@/lib/park-catalog";
 import { ParkNav } from "@/components/ParkNav";
+import { liveCampaigns } from "@/lib/park";
 
 export default async function ParkHome() {
   const t = await getT();
@@ -15,12 +16,19 @@ export default async function ParkHome() {
   const paquetes = PARK_PRODUCTS.filter((p) => p.kind === "paquete");
   const talleres = PARK_PRODUCTS.filter((p) => p.kind === "taller");
   const discountTiers = TIERS.filter((x) => x.giftDiscount > 0);
+  const live = liveCampaigns();
 
   return (
     <div className="space-y-20">
       {user && <ParkNav active="/park" />}
       <section className="relative overflow-hidden rounded-3xl border border-line bg-[radial-gradient(ellipse_at_80%_20%,rgba(192,38,211,0.25),transparent_55%),radial-gradient(ellipse_at_10%_90%,rgba(56,189,248,0.18),transparent_50%)] px-6 py-16 md:px-14">
         <p className="chip-brand mb-6">{t("Nuevo · Santiago de Chile")}</p>
+        {live.map((c) => (
+          <Link key={c.id} href={`/park/reservar?${new URLSearchParams({ p: c.products.split(",").filter(Boolean)[0] ?? "completa", c: c.code })}`}
+            className="mb-4 me-2 inline-flex items-center gap-2 rounded-full border border-magenta/50 bg-magenta/10 px-4 py-1.5 text-sm text-magenta">
+            ✦ {t(c.name)} · −{Math.round(c.discount * 100)} % · {t("código")} <b className="font-mono">{c.code}</b> · {t("hasta el {date}", { date: c.ends_on })}
+          </Link>
+        ))}
         <h1 className="max-w-3xl font-display text-4xl leading-tight md:text-6xl">
           {t("TWO LOVE Park:")} <span className="brand-text">{t("el parque de citas")}</span>
         </h1>

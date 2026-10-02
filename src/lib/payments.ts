@@ -1,18 +1,14 @@
 import "server-only";
 import crypto from "node:crypto";
-import { headers } from "next/headers";
 import { run } from "./db";
+import { appBaseUrl } from "./url";
 
 // Integración con Stripe Checkout mediante su API REST (sin SDK).
 // Si STRIPE_SECRET_KEY no está definido, la billetera funciona en modo demostración.
 
 export const paymentsEnabled = () => !!process.env.STRIPE_SECRET_KEY;
 
-async function baseUrl() {
-  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, "");
-  const h = await headers();
-  return h.get("origin") ?? `https://${h.get("host")}`;
-}
+const baseUrl = appBaseUrl;
 
 /** Crea una sesión de Stripe Checkout para recargar la billetera y devuelve su URL. */
 export async function createCheckout(userId: number, email: string, amount: number) {

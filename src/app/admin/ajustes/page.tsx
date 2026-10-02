@@ -4,7 +4,8 @@ import { getT } from "@/lib/i18n";
 import { clp, money } from "@/lib/money";
 import { clpToFils, PARK_PRODUCTS } from "@/lib/park-catalog";
 import { clpPerAed, SETTINGS, settingsLog } from "@/lib/settings";
-import { updateFxRate } from "../../actions/admin";
+import { refreshFxRate, updateFxRate } from "../../actions/admin";
+import { AED_PER_USD } from "@/lib/fx";
 import { Flash, PageHeader, sp, type SP } from "@/components/ui";
 
 export default async function Settings({ searchParams }: { searchParams: SP }) {
@@ -37,6 +38,10 @@ export default async function Settings({ searchParams }: { searchParams: SP }) {
               </div>
             </div>
             <button className="btn-brand" type="submit">{t("Guardar tipo de cambio")}</button>
+          </form>
+          <form action={refreshFxRate} className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
+            <button className="btn-ghost" type="submit">{t("Actualizar desde el Banco Central")}</button>
+            <span className="text-xs text-muted">{t("Dólar observado (mindicador.cl) ÷ {peg} AED por USD. También se puede programar a diario en /api/cron/fx con CRON_SECRET.", { peg: AED_PER_USD })}</span>
           </form>
           <p className="text-xs text-muted">{t("{n} reservas pendientes con saldo por cobrar de {v}: mantienen el tipo con que se reservaron.", { n: pending.n, v: clp(pending.v) })}</p>
         </section>

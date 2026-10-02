@@ -3,7 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 import { seed } from "./seed";
-import { seedParkReference } from "./park-seed";
+import { seedCampaigns, seedParkReference } from "./park-seed";
 
 const SCHEMA = `
 PRAGMA journal_mode = WAL;
@@ -343,6 +343,27 @@ CREATE TABLE IF NOT EXISTS settings_log (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Correo saliente: se encola dentro de la transacción de la operación y se envía tras confirmarla
+CREATE TABLE IF NOT EXISTS email_outbox (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  to_email TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  html TEXT NOT NULL,
+  text TEXT NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'transaccional',    -- transaccional | marketing
+  status TEXT NOT NULL DEFAULT 'pendiente',      -- pendiente | enviado | demo | error
+  provider_id TEXT,
+  error TEXT,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  ref TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  sent_at TEXT
+);
+CREATE TABLE IF NOT EXISTS email_optout (
+  email TEXT PRIMARY KEY,                        -- baja de comunicaciones comerciales
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- ── TWO LOVE Park: parque de citas físico (importes en CLP) ──────────────────
 CREATE TABLE IF NOT EXISTS park_venues (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -386,6 +407,7 @@ CREATE TABLE IF NOT EXISTS park_bookings (
   status TEXT NOT NULL DEFAULT 'reservada',      -- reservada | en_curso | completada | cancelada | no_show
   fx_rate REAL,                                  -- CLP por AED aplicado a esta reserva (cobros y devoluciones)
   voucher_id INTEGER REFERENCES park_vouchers(id), -- pagada con tarjeta regalo
+  campaign_id INTEGER REFERENCES park_campaigns(id), -- reservada con código de campaña
   qr TEXT NOT NULL UNIQUE,
   album TEXT UNIQUE,
   notes TEXT NOT NULL DEFAULT '',
@@ -468,6 +490,22 @@ CREATE TABLE IF NOT EXISTS park_survey (
   dates TEXT NOT NULL DEFAULT '',                -- fechas que celebran (csv)
   comuna TEXT NOT NULL DEFAULT '',
   email TEXT NOT NULL DEFAULT '',                -- opcional, para invitar al pop-up
+  invited_at TEXT,                               -- invitación al pop-up enviada
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Campañas de temporada del Park con código promocional (520, San Valentín, Qixi…)
+CREATE TABLE IF NOT EXISTS park_campaigns (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  discount REAL NOT NULL,                        -- 0.15 = 15 %
+  starts_on TEXT NOT NULL,                       -- fechas del local (YYYY-MM-DD), inclusivas
+  ends_on TEXT NOT NULL,
+  products TEXT NOT NULL DEFAULT '',             -- experiencias (csv); vacío = todas
+  max_uses INTEGER,                              -- tope de reservas; NULL = sin tope
+  active INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -488,9 +526,11 @@ function migrate(conn: DatabaseSync) {
     conn.exec("UPDATE users SET referral_code = 'TL' || upper(hex(randomblob(3))) WHERE referral_code IS NULL");
   }
   if (!users.includes("referred_by")) conn.exec("ALTER TABLE users ADD COLUMN referred_by INTEGER REFERENCES users(id)");
+  if (!cols("park_survey").includes("invited_at")) conn.exec("ALTER TABLE park_survey ADD COLUMN invited_at TEXT");
   const pb = cols("park_bookings");
   if (!pb.includes("fx_rate")) conn.exec("ALTER TABLE park_bookings ADD COLUMN fx_rate REAL");
   if (!pb.includes("voucher_id")) conn.exec("ALTER TABLE park_bookings ADD COLUMN voucher_id INTEGER REFERENCES park_vouchers(id)");
+  if (!pb.includes("campaign_id")) conn.exec("ALTER TABLE park_bookings ADD COLUMN campaign_id INTEGER REFERENCES park_campaigns(id)");
   if (!users.includes("scope")) conn.exec("ALTER TABLE users ADD COLUMN scope TEXT NOT NULL DEFAULT 'full'"); // full | park
   conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_ref ON users(referral_code)");
 }
@@ -512,6 +552,8 @@ export function db(): DatabaseSync {
     // Bases creadas antes de TWO LOVE Park: añade locales y máquinas (sin historial de demostración)
     tx(conn, () => seedParkReference(conn));
   }
+  // Bases anteriores a las campañas de temporada
+  if ((conn.prepare("SELECT COUNT(*) AS n FROM park_campaigns").get() as { n: number }).n === 0) tx(conn, () => seedCampaigns(conn));
   conn.exec("UPDATE users SET referral_code = 'TL' || upper(hex(randomblob(3))) WHERE referral_code IS NULL");
   g.__twolove_db = conn;
   return conn;

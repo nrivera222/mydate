@@ -99,7 +99,8 @@ const ENUMS = ["requested", "accepted", "completed", "declined", "cancelled", "d
   "nota", "llamada", "concierge", "incidencia", "pagado", "preparando", "entregado", "nuevo", "en_curso", "resuelto", "publicado", "cancelado",
   "organico", "instagram", "referido", "evento_privado", "alianza", "google", "interno",
   "Suspendido", "Lead · verificando", "En riesgo", "VIP", "Suscriptor", "Verificado · free",
-  "reservada", "completada", "cancelada", "no_show", "Cliente Park", "park"];
+  "reservada", "completada", "cancelada", "no_show", "Cliente Park", "park",
+  "Pausada", "Próxima", "Finalizada", "Vigente", "Enviado", "Demostración", "Pendiente", "Error", "Comercial", "Transaccional"];
 ENUMS.forEach((x) => add(x, "enum"));
 
 // Contenido sembrado
@@ -113,6 +114,7 @@ if (fs.existsSync(dbFile)) {
   for (const r of q("SELECT title, description, venue FROM events")) { add(r.title, "db:events"); add(r.description, "db:events"); add(r.venue, "db:events"); }
   for (const r of q("SELECT city FROM park_venues")) add(r.city, "db:park");
   for (const r of q("SELECT name FROM park_machines")) add(r.name, "db:park");
+  for (const r of q("SELECT name, description FROM park_campaigns")) { add(r.name, "db:park"); add(r.description, "db:park"); }
 } else {
   console.warn("Aviso: no hay base de datos; no se comprueba el contenido sembrado.");
 }

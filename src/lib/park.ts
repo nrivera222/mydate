@@ -10,7 +10,7 @@ import {
 export type ParkBooking = {
   id: number; user_id: number; venue_id: number; product: string; slot_at: string; partner_id: number | null; partner_name: string;
   destination: string | null; minor: number; minor_names: string; photo_consent: number; price: number; discount: number; total: number;
-  deposit: number; paid: number; status: string; qr: string; album: string | null; notes: string; created_at: string; fx_rate: number | null; voucher_id: number | null;
+  deposit: number; paid: number; status: string; qr: string; album: string | null; notes: string; created_at: string; fx_rate: number | null; voucher_id: number | null; campaign_id: number | null;
   checked_in_at: string | null; completed_at: string | null;
 };
 
@@ -95,3 +95,32 @@ export type Voucher = {
 /** Tarjeta regalo canjeable (activa y vigente). */
 export const activeVoucher = (code: string) =>
   one<Voucher>("SELECT * FROM park_vouchers WHERE code = ? AND status = 'activo' AND datetime(expires_at) > datetime('now')", code.trim().toUpperCase());
+
+export type Campaign = {
+  id: number; code: string; name: string; description: string; discount: number; starts_on: string; ends_on: string;
+  products: string; max_uses: number | null; active: number; created_at: string;
+};
+
+/** Campañas vigentes hoy (fecha del local), activas y con cupo. */
+export function liveCampaigns() {
+  const today = venueNow().date;
+  return all<Campaign & { uses: number }>(
+    `SELECT c.*, (SELECT COUNT(*) FROM park_bookings b WHERE b.campaign_id = c.id AND b.status != 'cancelada') AS uses
+     FROM park_campaigns c WHERE c.active = 1 AND ? BETWEEN c.starts_on AND c.ends_on ORDER BY c.ends_on`, today,
+  ).filter((c) => c.max_uses == null || c.uses < c.max_uses);
+}
+
+/** Valida un código de campaña para una experiencia: devuelve la campaña o el motivo del rechazo. */
+export function checkCampaign(code: string, productId: string): { campaign?: Campaign; error?: string } {
+  const c = one<Campaign>("SELECT * FROM park_campaigns WHERE code = ?", code.trim().toUpperCase());
+  if (!c || !c.active) return { error: "Código promocional no válido." };
+  const today = venueNow().date;
+  if (today < c.starts_on || today > c.ends_on) return { error: "Este código promocional no está vigente." };
+  const products = c.products.split(",").filter(Boolean);
+  if (products.length && !products.includes(productId)) return { error: "Este código promocional no aplica a esta experiencia." };
+  if (c.max_uses != null) {
+    const used = one<{ n: number }>("SELECT COUNT(*) AS n FROM park_bookings WHERE campaign_id = ? AND status != 'cancelada'", c.id)!.n;
+    if (used >= c.max_uses) return { error: "Este código promocional ya se agotó." };
+  }
+  return { campaign: c };
+}

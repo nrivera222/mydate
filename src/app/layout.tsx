@@ -73,6 +73,7 @@ const ADMIN_NAV = [
   ["/admin/erp", "ERP"],
   ["/admin/eventos", "Eventos"],
   ["/admin/park", "Park"],
+  ["/admin/correos", "Correos"],
   ["/admin/ajustes", "Ajustes"],
   ["/admin/seguridad", "Seguridad"],
 ];

@@ -1,19 +1,22 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
-import { all } from "@/lib/db";
+import { all, one } from "@/lib/db";
+import { invitePopup } from "../../../actions/park";
 import { getT } from "@/lib/i18n";
 import { pct } from "@/lib/money";
 import { PARK_ZONES, SURVEY, productById } from "@/lib/park-catalog";
-import { Bars, PageHeader, Stat } from "@/components/ui";
+import { Bars, Flash, PageHeader, sp, Stat, type SP } from "@/components/ui";
 
 type Row = { age: number; together: number; frequency: number; spend: number; interests: string; pay: number; club: number; dates: string; comuna: string; email: string };
 
 // Resultados de la encuesta de validación frente a la hipótesis del plan
-export default async function SurveyResults() {
+export default async function SurveyResults({ searchParams }: { searchParams: SP }) {
   const t = await getT();
   await requireAdmin();
+  const q = await searchParams;
   const rows = all<Row>("SELECT age, together, frequency, spend, interests, pay, club, dates, comuna, email FROM park_survey");
   const n = rows.length;
+  const pendingInvites = one<{ n: number }>("SELECT COUNT(*) AS n FROM park_survey WHERE email != '' AND invited_at IS NULL")!.n;
   const share = (f: (r: Row) => boolean) => (n ? rows.filter(f).length / n : 0);
   const willing = share((r) => r.pay <= 1);
   const firm = share((r) => r.pay === 0);
@@ -33,6 +36,7 @@ export default async function SurveyResults() {
           <a href="/admin/park/encuesta/csv" className="btn-ghost">{t("Descargar CSV")}</a>
         </div>
       </PageHeader>
+      <Flash ok={sp(q.ok)} error={sp(q.error)} />
       <div className="grid gap-4 md:grid-cols-4">
         <Stat label={t("Respuestas")} value={`${n} / ${SURVEY.target}`} hint={pct(Math.min(1, n / SURVEY.target))} />
         <Stat label={t("Pagaría la Cita Completa")} value={pct(willing)} hint={t("{firm} sí · umbral {min}", { firm: pct(firm), min: pct(SURVEY.threshold) })} />
@@ -44,6 +48,16 @@ export default async function SurveyResults() {
           : n < SURVEY.target ? t("Faltan {n} respuestas para cerrar la validación.", { n: SURVEY.target - n })
           : t("La disposición a pagar está bajo el umbral: revisar precios o propuesta antes de firmar.")}
       </div>
+      <section className="card mt-6">
+        <h2 className="h2">{t("Invitar al pop-up de prueba")}</h2>
+        <p className="mt-1 text-sm text-muted">{t("Se envía una sola vez a quienes dejaron su email y aceptaron ser contactados ({n} pendientes). Incluye enlace de baja.", { n: pendingInvites })}</p>
+        <form action={invitePopup} className="mt-3 grid gap-3 md:grid-cols-[1fr_1.5fr_auto]">
+          <input className="input" name="when" maxLength={80} required placeholder={t("Sábado 14 y domingo 15 de noviembre, 12:00–20:00")} aria-label={t("Cuándo")} />
+          <input className="input" name="where" maxLength={120} required placeholder={t("Galería en Providencia, Santiago")} aria-label={t("Dónde")} />
+          <button className="btn-brand" type="submit" disabled={pendingInvites === 0}>{t("Enviar invitaciones")}</button>
+        </form>
+      </section>
+
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <section className="card"><h2 className="h2 mb-4">{t("Qué quieren hacer")}</h2><Bars rows={multi("interests", PARK_ZONES.map((z) => ({ id: z.id, label: `${z.icon} ${t(z.name)}` })))} format={pct} /></section>
         <section className="card"><h2 className="h2 mb-4">{t("Fechas que celebran")}</h2><Bars rows={multi("dates", SURVEY.dates.map((d) => ({ id: d, label: t(productById(d)?.name ?? d) })))} format={pct} /></section>

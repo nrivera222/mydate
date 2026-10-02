@@ -83,6 +83,7 @@ export default async function AdminPark({ searchParams }: { searchParams: SP }) 
       <PageHeader title={t("TWO LOVE Park · operación")} subtitle={`${venue.name} · ${t(venue.city)} · ${t("Mes {n} del piloto", { n: month })}`}>
         <div className="flex gap-2">
           <Link href="/admin/park/escaner" className="btn-brand">📷 {t("Escáner de la puerta")}</Link>
+          <Link href="/admin/park/campanas" className="btn-ghost">{t("Campañas")}</Link>
           <Link href="/admin/park/encuesta" className="btn-ghost">{t("Encuesta de validación")}</Link>
         </div>
       </PageHeader>

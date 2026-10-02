@@ -19,6 +19,30 @@ const MACHINES: [string, "maquina" | "cabina", number, number, number][] = [
   ["Purikura", "cabina", 1, 5_000_000, 4.6],
 ];
 
+// Qixi (San Valentín chino, 7.º día del 7.º mes lunar)
+const QIXI: Record<number, string> = { 2026: "08-19", 2027: "08-08", 2028: "08-26", 2029: "08-16", 2030: "08-05" };
+
+/** Campañas de temporada (próxima ocurrencia de cada fecha). Devuelve los ids por código. */
+export function seedCampaigns(conn: DatabaseSync) {
+  const today = venueNow().date;
+  const y = Number(today.slice(0, 4));
+  // Ventana de este año si aún no termina; si no, la del próximo
+  const next = (start: string, end: string) => (`${y}-${end}` >= today ? [`${y}-${start}`, `${y}-${end}`] : [`${y + 1}-${start}`, `${y + 1}-${end}`]);
+  const qixiYear = `${y}-${QIXI[y] ?? "08-10"}` >= today ? y : y + 1;
+  const qixi = QIXI[qixiYear] ?? "08-10";
+  const qixiStart = addDays(`${qixiYear}-${qixi}`, -6);
+  const ins = conn.prepare("INSERT OR IGNORE INTO park_campaigns (code, name, description, discount, starts_on, ends_on, products, max_uses) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+  const rows: [string, string, string, number, string, string, string, number | null][] = [
+    ["TLBOO", "Halloween para dos", "Misterio cooperativo y cabinas con ambientación de terror.", 0.15, ...next("10-01", "10-31") as [string, string], "clasica,completa", null],
+    ["TLCUECA", "Fiestas Patrias", "Cueca, empanadas y cita en el Park para el 18.", 0.1, `${y}-09-10`, `${y}-09-20`, "clasica,completa,baile", null],
+    ["TLVALENTIN", "San Valentín", "La semana del amor: citas y paquetes con descuento.", 0.15, ...next("02-01", "02-14") as [string, string], "", null],
+    ["TL520", "520 · Día del amor", "El 20 de mayo suena a «te amo» en chino: 520 cupos.", 0.2, ...next("05-18", "05-20") as [string, string], "", 520],
+    ["TLQIXI", "Qixi · San Valentín chino", "La noche de las estrellas enamoradas, con misterio para dos.", 0.15, qixiStart, `${qixiYear}-${qixi}`, "completa,viaje,recrea", null],
+  ];
+  rows.forEach((r) => ins.run(...r));
+  return Object.fromEntries((conn.prepare("SELECT id, code FROM park_campaigns").all() as { id: number; code: string }[]).map((r) => [r.code, r.id]));
+}
+
 /** Locales y máquinas (datos de referencia). Devuelve el id del local piloto. */
 export function seedParkReference(conn: DatabaseSync, opensOn = new Date().toISOString().slice(0, 10)) {
   const v = conn.prepare("INSERT INTO park_venues (name, city, country, size_m2, status, opens_on, address) VALUES (?, ?, ?, ?, ?, ?, ?)");
@@ -73,9 +97,9 @@ export function seedParkDemo(conn: DatabaseSync, o: { r: () => number; demoId: n
   // Reservas de la app (historial y agenda)
   const users = ids.filter((id) => id !== demoId);
   const ins = conn.prepare(`INSERT INTO park_bookings (user_id, venue_id, product, slot_at, partner_id, partner_name, destination, minor, minor_names, photo_consent,
-    price, discount, total, deposit, paid, status, qr, album, notes, created_at, checked_in_at, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+    price, discount, total, deposit, paid, status, qr, album, notes, created_at, checked_in_at, completed_at, campaign_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
   const stamp = conn.prepare("INSERT OR IGNORE INTO park_stamps (user_id, stamp, booking_id, created_at) VALUES (?, ?, ?, ?)");
-  const book = (userId: number, productId: string, slot: string, status: string, extra: { partnerId?: number | null; partnerName?: string; destination?: string; minor?: string; discount?: number } = {}) => {
+  const book = (userId: number, productId: string, slot: string, status: string, extra: { partnerId?: number | null; partnerName?: string; destination?: string; minor?: string; discount?: number; campaignId?: number } = {}) => {
     const p = productById(productId)!;
     const discount = extra.discount ?? 0;
     const total = p.price - discount;
@@ -85,7 +109,7 @@ export function seedParkDemo(conn: DatabaseSync, o: { r: () => number; demoId: n
     // Las reservas futuras se hicieron ayer; las pasadas, el mismo día de la cita
     const created = slot > day(0, 23) ? day(1, 10) : slot.slice(0, 10) + " 09:00:00";
     const id = Number(ins.run(userId, pilot, p.id, slot, extra.partnerId ?? null, extra.partnerName ?? "", extra.destination ?? null, extra.minor ? 1 : 0, extra.minor ?? "",
-      extra.minor ? 0 : 1, p.price, discount, total, deposit, paid, status, "TLP-" + token(9), done ? token(18) : null, "", created, done ? slot : null, done ? slot : null).lastInsertRowid);
+      extra.minor ? 0 : 1, p.price, discount, total, deposit, paid, status, "TLP-" + token(9), done ? token(18) : null, "", created, done ? slot : null, done ? slot : null, extra.campaignId ?? null).lastInsertRowid);
     if (paid) rev(p.stream, paid, userId, `park:${id}`, done ? slot : created);
     if (done) for (const st of p.stamps) {
       stamp.run(userId, st, id, slot);
@@ -118,6 +142,18 @@ export function seedParkDemo(conn: DatabaseSync, o: { r: () => number; demoId: n
   book(demoId, "cumplemes", day(6, 20), "completada", { ...both, discount: 4_500 });
   const weekday = new Date(`${base}T12:00:00Z`).getUTCDay();
   book(demoId, "clasica", day(-((6 - weekday + 7) % 7 || 7), 20), "reservada", { ...both, discount: 2_290 }); // próximo sábado
+
+  // Campañas de temporada; Fiestas Patrias ya terminó y dejó ventas atribuidas
+  const campaigns = seedCampaigns(conn);
+  const cueca = (conn.prepare("SELECT starts_on, ends_on FROM park_campaigns WHERE code = 'TLCUECA'").get() as { starts_on: string; ends_on: string });
+  if (cueca.ends_on < base) {
+    for (let k = 0; k < 9; k++) {
+      const dDate = addDays(cueca.starts_on, Math.floor(r() * 11));
+      const daysAgo = Math.round((Date.parse(`${base}T00:00:00Z`) - Date.parse(`${dDate}T00:00:00Z`)) / 86_400_000);
+      const p = pick(["clasica", "completa", "baile"]);
+      book(pick(users), p, day(daysAgo, 13 + Math.floor(r() * 8)), "completada", { partnerName: pick(["Antonia", "Vicente", "Isidora"]), discount: Math.round(productById(p)!.price * 0.1), campaignId: campaigns.TLCUECA });
+    }
+  }
 
   // Cuentas "solo Park" (18+) de Santiago: todos los segmentos de edad
   const year = Number(base.slice(0, 4));

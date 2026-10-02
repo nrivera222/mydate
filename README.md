@@ -61,7 +61,7 @@ La interfaz está disponible en **español, inglés y árabe** (con dirección R
 
 - Las traducciones viven en `src/lib/i18n/en.ts` y `src/lib/i18n/ar.ts`; la clave es el texto original en español (`t("Guardar perfil")`).
 - Los avisos de las acciones y las notificaciones guardadas se traducen al mostrarse, reconociendo partes variables (`"Recarga de {a} completada."`) y reformateando importes al idioma activo.
-- `npm run i18n:check` verifica que todo texto de la interfaz, del catálogo y del contenido sembrado tiene traducción en ambos idiomas (1.550 claves).
+- `npm run i18n:check` verifica que todo texto de la interfaz, del catálogo y del contenido sembrado tiene traducción en ambos idiomas (1.631 claves).
 - El contenido que escribe cada miembro (biografía, ocupación, mensajes) no se traduce.
 
 ## Qué incluye
@@ -100,11 +100,16 @@ Segundo mundo del ecosistema, basado en el plan para inversionistas: un local f�
 | Regala una cita | `/park/regalar` | Tarjetas regalo por experiencia (12 meses): se pagan desde la billetera, avisan a quien la recibe si tiene cuenta y se canjean con el código al reservar (cubren la experiencia completa). Son pasivo hasta el canje; al cancelar, el regalo vuelve a estar disponible. |
 | Encuesta de validación | `/park/encuesta` | Pública y anónima (hipótesis del plan: 300 parejas antes de firmar el arriendo). No guarda datos de contacto de menores. Resultados, umbral de validación y CSV en `/admin/park/encuesta`. |
 | Escáner de la puerta | `/admin/park/escaner` | Lee el QR de la reserva con la cámara (BarcodeDetector) o por teclado y permite check-in, completar, no presentado o cancelar al momento. |
+| Campañas de temporada | `/admin/park/campanas` | Códigos promocionales con ventana de fechas, experiencias y tope de usos (Halloween, Fiestas Patrias, San Valentín, 520 y Qixi de ejemplo). Se aplica el mayor entre la campaña y el descuento de la membresía/Club, nunca se suman ni se combinan con tarjetas regalo. Aparecen como banner en `/park` y en el formulario de reserva; el panel muestra usos, ventas y descuento concedido. |
 | Operación del local | `/admin/park` | Agenda (check-in con cobro del saldo, completar y sellar, no presentados, cancelación con devolución, subida de fotos), caja por línea de ingreso con parejas sin reserva, parejas e ingresos por mes, EBITDA estimado, **regla de decisión del mes 6** (umbral de 900 parejas), ingresos frente al caso base, socios del Club y recompra a 60 días, mezcla de segmentos, recuperación de la inversión de cada máquina y cabina y hoja de ruta. |
 
 **Cuentas solo Park (18+).** El Park tiene su propio alta en `/park/registro` desde los 18 años. Estas cuentas solo acceden al Park, la billetera y las notificaciones: `requireUser()` las devuelve a `/park` en cualquier otra ruta salvo que la página lo permita con `requireUser({ park: true })`. Nunca aparecen en Descubrir ni en acompañamiento, pueden verificar su identidad desde el pasaporte (necesaria para reservar como tutor) y, al cumplir 21, activan TWO LOVE Private con la misma cuenta y billetera. En el CRM figuran como «Cliente Park».
 
 **Tipo de cambio.** `/admin/ajustes` fija los CLP por AED (con historial de cambios). Cada reserva guarda el tipo con que se hizo, así el cobro del saldo y las devoluciones cuadran aunque el tipo cambie después. El resumen de `/admin` muestra el ecosistema consolidado: ingresos de Private y del Park, parejas atendidas, clientes en ambos mundos y avance de la encuesta.
+
+**Correo.** Las operaciones encolan los correos en `email_outbox` dentro de su transacción y se envían al confirmarla: confirmación de reserva con el código QR, tarjeta regalo a quien la recibe (tenga o no cuenta), cancelaciones del local e invitación al pop-up para quienes dejaron su email en la encuesta. Con `RESEND_API_KEY` y `EMAIL_FROM` se envían por Resend; sin clave quedan registrados en modo demostración. `/admin/correos` muestra el registro, la vista previa y permite reintentar. Los comerciales llevan un enlace de baja firmado (`/baja`) y respetan las bajas.
+
+**Tipo de cambio oficial.** «Actualizar desde el Banco Central» en `/admin/ajustes` toma el dólar observado (mindicador.cl, configurable con `FX_SOURCE_URL`) y lo divide por la paridad fija de 3,6725 AED por USD. Para hacerlo a diario, programa `GET /api/cron/fx` con la cabecera `Authorization: Bearer $CRON_SECRET`.
 
 **Hora del local.** Las franjas se guardan en hora de Santiago (`PARK_TZ = "America/Santiago"`) y todas las comprobaciones (horarios disponibles, antelación, cancelación gratuita, agenda, hitos) usan `venueNow()`/`hoursUntil()`, sea cual sea la zona horaria del servidor.
 

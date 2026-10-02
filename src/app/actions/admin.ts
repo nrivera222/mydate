@@ -8,6 +8,8 @@ import { post, recordRevenue, releaseHold } from "@/lib/ledger";
 import { notify } from "@/lib/notify";
 import { VERIFICATION_TYPES } from "@/lib/catalog";
 import { SETTINGS, setSetting } from "@/lib/settings";
+import { flushOutbox } from "@/lib/email";
+import { refreshOfficialRate } from "@/lib/fx";
 
 export async function reviewVerification(fd: FormData) {
   const admin = await requireAdmin();
@@ -207,4 +209,30 @@ export async function updateFxRate(fd: FormData) {
   transaction((conn) => setSetting(conn, "clp_per_aed", Math.round(value * 100) / 100, admin.id, str(fd, "note", 200)));
   revalidatePath("/", "layout");
   flash("/admin/ajustes", "Tipo de cambio actualizado. Se aplica a las nuevas reservas; las existentes conservan el suyo.");
+}
+
+// ── Correo saliente ──────────────────────────────────────────────────────────
+
+export async function retryEmails() {
+  await requireAdmin();
+  const ids = transaction((conn) => {
+    const rows = conn.prepare("SELECT id FROM email_outbox WHERE status IN ('error','pendiente') ORDER BY id LIMIT 100").all() as { id: number }[];
+    return rows.map((r) => r.id);
+  });
+  const r = ids.length ? await flushOutbox(100, ids) : { processed: 0, sent: 0 };
+  revalidatePath("/admin/correos");
+  flash("/admin/correos", `Reintentados: ${r.processed} · enviados: ${r.sent}.`);
+}
+
+export async function refreshFxRate() {
+  const admin = await requireAdmin();
+  let msg = "";
+  try {
+    const r = await refreshOfficialRate(admin.id);
+    msg = `Tipo actualizado desde el Banco Central: 1 AED = CLP ${r.rate} (dólar observado ${r.date}).`;
+  } catch (e) {
+    flash("/admin/ajustes", `No se pudo consultar la fuente oficial: ${(e as Error).message}`, "error");
+  }
+  revalidatePath("/", "layout");
+  flash("/admin/ajustes", msg);
 }

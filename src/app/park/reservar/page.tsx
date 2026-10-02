@@ -6,7 +6,7 @@ import { getT } from "@/lib/i18n";
 import { clp, money } from "@/lib/money";
 import { walletBalance } from "@/lib/users";
 import { hoursUntil, venueNow, CANCEL_FREE_HOURS, DEPOSIT_RATE, DESTINATIONS, PARK_PRODUCTS, PRODUCT_KIND_LABEL, clpToFils, productById, stampById, type ParkProductKind } from "@/lib/park-catalog";
-import { activeVoucher, coupleOf, parkDiscount, partnerOf, pilotVenue, slotsFor } from "@/lib/park";
+import { activeVoucher, checkCampaign, coupleOf, liveCampaigns, parkDiscount, partnerOf, pilotVenue, slotsFor } from "@/lib/park";
 import { bookPark } from "../../actions/park";
 import { Empty, Flash, PageHeader, sp, type SP } from "@/components/ui";
 import { ParkNav } from "@/components/ParkNav";
@@ -26,7 +26,13 @@ export default async function ParkBook({ searchParams }: { searchParams: SP }) {
   const vcode = (sp(q.v) ?? "").toUpperCase().slice(0, 20);
   const voucher = vcode ? activeVoucher(vcode) : undefined;
   const gifted = voucher?.product === product.id;
-  const { rate, source } = parkDiscount(user.id, user.tier);
+  const { rate: memberRate, source } = parkDiscount(user.id, user.tier);
+  // Código de campaña (?c=CODIGO): se aplica si mejora el descuento de la membresía/Club; no se combina con regalos
+  const pcode = (sp(q.c) ?? "").toUpperCase().slice(0, 20);
+  const promo = pcode && !gifted ? checkCampaign(pcode, product.id) : {};
+  const campaign = promo.campaign && promo.campaign.discount >= memberRate ? promo.campaign : undefined;
+  const rate = campaign ? campaign.discount : memberRate;
+  const live = liveCampaigns();
   const discount = gifted ? 0 : Math.round(product.price * rate);
   const total = product.price - discount;
   const deposit = gifted ? 0 : Math.round(total * DEPOSIT_RATE);
@@ -44,6 +50,16 @@ export default async function ParkBook({ searchParams }: { searchParams: SP }) {
       <ParkNav active="/park/reservar" />
       <PageHeader title={t("Reservar en TWO LOVE Park")} subtitle={venue ? `${venue.name} · ${t(venue.city)}` : undefined} />
       <Flash ok={sp(q.ok)} error={sp(q.error)} />
+      {live.length > 0 && !gifted && (
+        <div className="mb-6 flex flex-wrap items-center gap-2 rounded-2xl border border-magenta/40 bg-magenta/5 px-4 py-3 text-sm">
+          <span>✦ {t("Campañas vigentes")}:</span>
+          {live.map((c) => (
+            <Link key={c.id} href={`/park/reservar?${new URLSearchParams({ p: c.products.split(",").filter(Boolean).includes(product.id) || !c.products ? product.id : c.products.split(",")[0], d: date, c: c.code })}`} className="chip-brand">
+              {t(c.name)} · <span className="font-mono">{c.code}</span> · −{Math.round(c.discount * 100)} %
+            </Link>
+          ))}
+        </div>
+      )}
       {!venue ? <Empty>{t("No hay locales abiertos.")}</Empty> : (
         <div className="grid gap-8 lg:grid-cols-5">
           <div className="space-y-6 lg:col-span-3">
@@ -52,7 +68,7 @@ export default async function ParkBook({ searchParams }: { searchParams: SP }) {
                 <div className="label">{t(PRODUCT_KIND_LABEL[k])}</div>
                 <div className="flex flex-wrap gap-2">
                   {PARK_PRODUCTS.filter((p) => p.kind === k).map((p) => (
-                    <Link key={p.id} href={`/park/reservar?${new URLSearchParams({ p: p.id, d: date, ...(sp(q.partner) ? { partner: sp(q.partner)! } : {}), ...(vcode ? { v: vcode } : {}) })}`}
+                    <Link key={p.id} href={`/park/reservar?${new URLSearchParams({ p: p.id, d: date, ...(sp(q.partner) ? { partner: sp(q.partner)! } : {}), ...(vcode ? { v: vcode } : {}), ...(pcode ? { c: pcode } : {}) })}`}
                       className={p.id === product.id ? "chip-brand px-3 py-1 text-sm" : "chip px-3 py-1 text-sm hover:text-glow"}>
                       {t(p.name)} · {clp(p.price)}
                     </Link>
@@ -137,6 +153,15 @@ export default async function ParkBook({ searchParams }: { searchParams: SP }) {
                 <label className="label" htmlFor="notes">{t("Peticiones especiales")}</label>
                 <textarea className="input" id="notes" name="notes" maxLength={400} placeholder={t("Alergias, sorpresa, música…")} />
               </div>
+              {!gifted && (
+                <div>
+                  <label className="label" htmlFor="promo">{t("Código promocional (opcional)")}</label>
+                  <input className="input font-mono uppercase" id="promo" name="promo" maxLength={20} defaultValue={pcode} placeholder="TL520" />
+                  {promo.error && <p className="mt-1 text-xs text-rose">{t(promo.error)}</p>}
+                  {promo.campaign && !campaign && <p className="mt-1 text-xs text-muted">{t("Tu descuento actual ya es mayor que el de esta campaña.")}</p>}
+                  {campaign && <p className="mt-1 text-xs text-ok">✦ {t("Campaña {name}", { name: t(campaign.name) })}: −{Math.round(campaign.discount * 100)} %</p>}
+                </div>
+              )}
               <div>
                 <label className="label" htmlFor="voucher">{t("Código de regalo (opcional)")}</label>
                 <input className="input font-mono uppercase" id="voucher" name="voucher" maxLength={20} defaultValue={vcode} placeholder="TLG-XXXXXXXX" />
@@ -146,7 +171,7 @@ export default async function ParkBook({ searchParams }: { searchParams: SP }) {
               </div>
               <div className="space-y-1 border-t border-line pt-3 text-sm">
                 <div className="flex justify-between"><span className="text-muted">{t("Precio")}</span><span>{clp(product.price)}</span></div>
-                {discount > 0 && <div className="flex justify-between text-ok"><span>{source === "club" ? t("Descuento Two Love Club") : t("Descuento de tu membresía")} ({Math.round(rate * 100)} %)</span><span>−{clp(discount)}</span></div>}
+                {discount > 0 && <div className="flex justify-between text-ok"><span>{campaign ? t("Campaña {name}", { name: t(campaign.name) }) : source === "club" ? t("Descuento Two Love Club") : t("Descuento de tu membresía")} ({Math.round(rate * 100)} %)</span><span>−{clp(discount)}</span></div>}
                 <div className="flex justify-between font-semibold"><span>{t("Total")}</span><span>{clp(total)}</span></div>
                 {gifted
                   ? <div className="flex justify-between text-ok"><span>{t("Pagado con tarjeta regalo")}</span><span>−{clp(total)}</span></div>

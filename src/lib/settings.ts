@@ -24,7 +24,7 @@ export function clpPerAed() {
   return rate;
 }
 
-export function setSetting(conn: DatabaseSync, key: SettingKey, value: number, userId: number, note = "") {
+export function setSetting(conn: DatabaseSync, key: SettingKey, value: number, userId: number | null, note = "") {
   const old = conn.prepare("SELECT value FROM settings WHERE key = ?").get(key) as { value: string } | undefined;
   conn.prepare(`INSERT INTO settings (key, value, updated_by) VALUES (?, ?, ?)
     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_by = excluded.updated_by, updated_at = datetime('now')`).run(key, String(value), userId);
